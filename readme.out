@@ -1,0 +1,14 @@
+notes etc
+
+remake the fmttool and make it more gooder.
+
+the idea is to provide the user with options for format method.
+i.e.
+-i 32
+means format it as a 32 bit integer
+
+have a default mode which formats in common ways
+have a -long mode which tries to format in all ways
+support user pipe and stuff too.
+can you do: echo "45" | fmttool -i 32
+so can we part both the | and the command args?
