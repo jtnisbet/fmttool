@@ -1,14 +1,14 @@
 CC = g++
 CLFAGS = -std=c++17
-OBJECTS = fmt_tool.o fmt_type.o
+OBJECTS = fmt_tool.o cmd_arg.o
 
 %.o: %.cpp %.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-main: main.o $(OBJECTS)
-	$(CC) -o main main.o $(OBJECTS)
+fmttool: main.o $(OBJECTS)
+	$(CC) -o fmttool main.o $(OBJECTS)
 
 .PHONY: clean
 
 clean:
-	rm -f *.o *~ core main
+	rm -f *.o *~ core fmttool

@@ -12,3 +12,9 @@ have a -long mode which tries to format in all ways
 support user pipe and stuff too.
 can you do: echo "45" | fmttool -i 32
 so can we part both the | and the command args?
+
+--------
+
+change CmdArg to use inheritence.  i.e. each type of command has its own formatting method
+that produces the string output.
+factory method to instantiate the correct type.
