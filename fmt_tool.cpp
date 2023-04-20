@@ -1,24 +1,22 @@
 #include "fmt_tool.h"
 #include <memory>
-#include "cmd_arg.h"
+#include "fmt_type.h"
 #include "fmt_exception.h"
 
 const std::string FmtTool::DFT_ARGS = "-i 32";
 
 FmtTool::FmtTool() : iSStream_(nullptr), inStream_(nullptr), helpRequested_(false)
 {
-    using argT = CmdArg::CmdArgType;
     // Populate the formatting type map argument options.
     // This is done so that we may do switch during argument parsing of the input args
-    cmdArgTypeMap_["-i"] = argT::INT;
-    cmdArgTypeMap_["-a"] = argT::ASCII;
-    cmdArgTypeMap_["-b"] = argT::BINARY;
-    cmdArgTypeMap_["-h"] = argT::HELP;
+    cmdArgMap_["-i"] = CmdArg::INT;
+    cmdArgMap_["-a"] = CmdArg::ASCII;
+    cmdArgMap_["-b"] = CmdArg::BINARY;
+    cmdArgMap_["-h"] = CmdArg::HELP;
 }
 
 void FmtTool::parseArgs(std::stringstream *argStream)
 {
-    using argT = CmdArg::CmdArgType;
     // populate both the vector of formatting types as well as the user values that we want to format.
     // For example, the user may specify a list of formats they want to see as well as a list of values they want to
     // format.
@@ -29,21 +27,23 @@ void FmtTool::parseArgs(std::stringstream *argStream)
     std::string userValues;
     std::string tok;
     int argsProcessed = 0;
+    std::unique_ptr<FmtType> newType = nullptr;
     while (*argStream >> tok) {
-        bool makeCmdArg = true;
         size_t typeWidth = 0;  // not all types need a width.  default of 0 is ok.
-        argT currType = cmdArgTypeMap_[tok];
-        switch(currType) {
+        CmdArg currArg = cmdArgMap_[tok];
+        switch(currArg) {
             // -i <width>
-            case (argT::INT): {
+            case (CmdArg::INT): {
                 // A width argument is required. Fetch it from the arg stream, converted to size_t
                 if (!(*argStream >> typeWidth)) {
                     THROW_FMT_EXCEPTION("-i argument requires a width argument. (See fmttool -h for help)");
                 }
+                newType = std::make_unique<IntType>(typeWidth);  // base class pointer of derived class type
+                fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
                 break;
             }
             // -h for help. Does not have any args.
-            case (argT::HELP): {
+            case (CmdArg::HELP): {
                 helpRequested_ = true;
                 break;
             }
@@ -51,22 +51,16 @@ void FmtTool::parseArgs(std::stringstream *argStream)
             // later convert into an istream for parsing.
             default: {
                 userValues += " " + tok;
-                makeCmdArg = false;
                 break;
             }
         }
-
-        if (makeCmdArg) {
-            auto cmdArg = std::make_unique<CmdArg>(currType, typeWidth);
-            cmdArgs_.insert(std::move(cmdArg));  // std::set eliminates duplicates
-        }
     }
 
-    // If there were no args given (only user values), then assign a default formatting config.
-    if (cmdArgs_.empty()) {
+    // If there were no args given for type format requests (only user values), then assign a dft formatting config.
+    if (fmtTypes_.empty()) {
         // For consistency, this should match the DFT_ARGS variable options
-        auto cmdArg = std::make_unique<CmdArg>(argT::INT, 32);
-        cmdArgs_.insert(std::move(cmdArg));
+        newType = std::make_unique<IntType>(32);  // base class pointer of derived class type
+        fmtTypes_.insert(std::move(newType));     // std::set eliminates duplicates
     }
 
     if (!userValues.empty()) {
@@ -87,8 +81,8 @@ void FmtTool::parseArgs(std::stringstream *argStream)
 void FmtTool::showFormatRequests()
 {
     std::cout << "Requested formatting types:\n";
-    for (auto &cmdArg : cmdArgs_) {
-        std::cout << cmdArg->toString() << "\n";
+    for (auto &fmtType : fmtTypes_) {
+        std::cout << fmtType->toString() << "\n";
     }
     std::cout << std::endl;
 }
@@ -109,6 +103,27 @@ bool FmtTool::showHelp()
         std::cout << std::endl;
     }
     return helpRequested_;
+}
+
+void FmtTool::displayRow(const std::vector<FmtType::FmtColumn> &row)
+{
+    for (const auto &rowPair : row) {
+        // pair of string and width here.  print it
+    }
+}
+
+void FmtTool::showTitles()
+{
+    // for each format type request, do a lookup into the titles and widths to display a title bar of the table.
+    // The title consists of 2 lines, the titles themselves and the underscore characters as the second line.
+    // Getting these titles produces a vector of pairs (data paired with display width)
+    std::vector<FmtType::FmtColumn> titleRow;
+    std::vector<FmtType::FmtColumn> underscoreRow;
+    for (const auto &fmtType : fmtTypes_) {
+        fmtType->getTitleRow(titleRow, underscoreRow);
+    }
+    displayRow(titleRow);
+    displayRow(underscoreRow);
 }
 
 void FmtTool::executeFormatting()
@@ -134,13 +149,11 @@ void FmtTool::executeFormatting()
 
 void FmtTool::formatAndDisplay(const std::string &value)
 {
-    // for each format request, drive the formatting against the data.
-    // Formatting the data produces a vector of pairs.
-    std::vector<CmdArg::FmtColumn> outputCols;
-    for (const auto &argCmd : cmdArgs_) {
-        // given the value, format this into columns.  A single ArgCmd may result in different column outputs for a
-        // value.  For example, formatting the number 99 as a 32-bit integer will produce the following row of data:
-        // 
-        argCmd->format(outputCols, value);
+    // for each format type request, drive the formatting against the data.
+    // Formatting the data produces a vector of pairs (data paired with display width)
+    std::vector<FmtType::FmtColumn> outputCols;
+    for (const auto &fmtType : fmtTypes_) {
+        fmtType->format(outputCols, value);
     }
+    displayRow(outputCols);
 }
