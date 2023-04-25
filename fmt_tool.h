@@ -41,6 +41,7 @@ private:
     std::set<std::unique_ptr<FmtType>> fmtTypes_;
     std::unique_ptr<std::istringstream> iSStream_;
     std::istream *inStream_;
+    int integerCount_;
     bool helpRequested_;
 };
 

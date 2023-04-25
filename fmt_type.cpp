@@ -32,4 +32,7 @@ void IntType::format(std::vector<FmtColumn> &formattedCols, const std::string &v
 void IntType::getTitleRow(std::vector<FmtType::FmtColumn> &titleRow,
                           std::vector<FmtType::FmtColumn> &underscoreRow) const
 {
+    // do this later
+    titleRow.emplace_back("title goes here", 15);
+    underscoreRow.emplace_back("---------------", 15);
 }

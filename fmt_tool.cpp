@@ -1,11 +1,12 @@
 #include "fmt_tool.h"
+#include <iomanip>
 #include <memory>
 #include "fmt_type.h"
 #include "fmt_exception.h"
 
 const std::string FmtTool::DFT_ARGS = "-i 32";
 
-FmtTool::FmtTool() : iSStream_(nullptr), inStream_(nullptr), helpRequested_(false)
+FmtTool::FmtTool() : iSStream_(nullptr), inStream_(nullptr), integerCount_(0), helpRequested_(false)
 {
     // Populate the formatting type map argument options.
     // This is done so that we may do switch during argument parsing of the input args
@@ -40,6 +41,7 @@ void FmtTool::parseArgs(std::stringstream *argStream)
                 }
                 newType = std::make_unique<IntType>(typeWidth);  // base class pointer of derived class type
                 fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
+                ++integerCount_;  // count that an int arg has been parsed
                 break;
             }
             // -h for help. Does not have any args.
@@ -105,10 +107,10 @@ bool FmtTool::showHelp()
     return helpRequested_;
 }
 
-void FmtTool::displayRow(const std::vector<FmtType::FmtColumn> &row)
+void FmtTool::displayRow(const std::vector<FmtType::FmtColumn> &row) const
 {
     for (const auto &rowPair : row) {
-        // pair of string and width here.  print it
+        std::cout << std::setw(rowPair.second) << rowPair.first << "\n";
     }
 }
 

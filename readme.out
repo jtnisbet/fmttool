@@ -14,7 +14,21 @@ can you do: echo "45" | fmttool -i 32
 so can we part both the | and the command args?
 
 --------
+got the basic interface done.
+now I'm focussing on the format itself.
+say you have -i 32 -i 64 55 99
 
-change CmdArg to use inheritence.  i.e. each type of command has its own formatting method
-that produces the string output.
-factory method to instantiate the correct type.
+this means we format the 55 and the 99.
+but each format may yield multiple columns. for example:
+55 0x0000000000000055  ==> 64 bit output
+55 0x00000055          ==> 32 bit output
+
+so do you display:
+55 0x00000055 0x0000000000000055
+
+this will need some work for this.
+and also, we need to figure out how to show titles as well to go with this.
+
+what about signed or unsigned?
+can we show what the overflowed number might look like?  or the negative number?
+maybe my option should be i for signed int and u for unsigned int
