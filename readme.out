@@ -32,3 +32,14 @@ and also, we need to figure out how to show titles as well to go with this.
 what about signed or unsigned?
 can we show what the overflowed number might look like?  or the negative number?
 maybe my option should be i for signed int and u for unsigned int
+
+-------------
+
+so for signed vs unsigned...later I'll add a -u.
+It might be able to share the same fmt type as int_type though, but not sure.
+
+Also, I was thinking about a template based format.
+like format<uint32_t>(std::string value)
+..however the problem is that each type has different rules I think.
+So I would have custom code and basically need to do template specialization
+for each one. so not much point

@@ -32,16 +32,16 @@ public:
     void parseArgs(std::stringstream *argStream);
     void showFormatRequests();
     bool showHelp();
-    void showTitles();
+    void addTitles();
     void executeFormatting();
 private:
-    void formatAndDisplay(const std::string &value);
-    void displayRow(const std::vector<FmtType::FmtColumn> &row) const;
+    using ResultTable = std::vector<std::vector<FmtType::FmtColumn>>;  // rows of columns
+    void addToResultTable(const std::string &value);
     std::unordered_map<std::string, CmdArg> cmdArgMap_;
     std::set<std::unique_ptr<FmtType>> fmtTypes_;
     std::unique_ptr<std::istringstream> iSStream_;
     std::istream *inStream_;
-    int integerCount_;
     bool helpRequested_;
+    ResultTable results_;
 };
 

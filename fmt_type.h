@@ -10,7 +10,7 @@ class FmtType {
 public:
     using FmtColumn = std::pair<std::string, size_t>;
 
-    FmtType();
+    FmtType(bool firstOfType);
     virtual ~FmtType() = default;
 
     // For use with std::set comparison and duplicate elimination
@@ -26,20 +26,7 @@ public:
     virtual size_t getCompareHash() const = 0;
     virtual void getTitleRow(std::vector<FmtType::FmtColumn> &titleRow,
                              std::vector<FmtType::FmtColumn> &underscoreRow) const = 0;
-};
-
-class IntType : public FmtType {
-public:
-    IntType(size_t width);
-    ~IntType() = default;
-    std::string toString() const override;
-    void format(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value) override;
-    size_t getCompareHash() const override
-    {
-        return std::hash<size_t>()(width_);
-    }
-    void getTitleRow(std::vector<FmtType::FmtColumn> &titleRow,
-                     std::vector<FmtType::FmtColumn> &underscoreRow) const override;
-private:
-    size_t width_;
+protected:
+    static const std::string OUT_OF_RANGE;
+    bool firstOfType_;
 };
