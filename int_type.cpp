@@ -1,5 +1,7 @@
 #include "int_type.h"
+#include <iomanip>
 #include <limits>
+#include <sstream>
 #include <string>
 #include "fmt_exception.h"
 #include "fmt_type.h"
@@ -69,7 +71,6 @@ void IntType::format8(std::vector<FmtType::FmtColumn> &formattedCols, const std:
     // format as base 16 (hex). If 012 it assumes octal etc. Otherwise it assume base 10.
 
     // What happens if the value is too large for an 8-bit int, or other invalid values?
-
     // Exceptions:
     // std::invalid_argument if no conversion could be performed
     // std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
@@ -85,6 +86,7 @@ void IntType::format8(std::vector<FmtType::FmtColumn> &formattedCols, const std:
     }
     catch(std::out_of_range const& ex)
     {
+        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
         rangeError = true;
     }
 
@@ -98,11 +100,25 @@ void IntType::format8(std::vector<FmtType::FmtColumn> &formattedCols, const std:
         valueAsType = intValue;  // safe down-cast, we already checked its range
     }
 
-    // Now, do the format.  remember that each format type might produce multiple columns of data.
-    // if we have range error, we display the range error text for all the entries
-    
-    // Don't throw an exception. Instead, display some text to show invalid range.
-//        formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+    // The first column is just the integer representation of the number in base 10.
+    if (firstOfType) {
+        if (rangeError) {
+            formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+        } else {
+            std::string formattedData = std::to_string(valueAsType);
+            formattedCols.emplace_back(formattedData, formattedData.size());
+        }
+    }
+
+    // The next column will be the hex format of the number. Ensure leading zeros match the bitwidth.
+    if (rangeError) {
+        formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+    } else {
+        std::stringstream ss;
+        ss << std::hex << std::showbase << std::setw(2) << std::setfill('0') << valueAsType;
+        std::string formattedData = ss.str();
+        formattedCols.emplace_back(formattedData, formattedData.size());
+    }
 }
 
 void IntType::format16(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)

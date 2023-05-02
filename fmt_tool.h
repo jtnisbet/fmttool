@@ -37,6 +37,8 @@ public:
 private:
     using ResultTable = std::vector<std::vector<FmtType::FmtColumn>>;  // rows of columns
     void addToResultTable(const std::string &value);
+    void prepareTableForDisplay();
+    void displayResultsTable();
     std::unordered_map<std::string, CmdArg> cmdArgMap_;
     std::set<std::unique_ptr<FmtType>> fmtTypes_;
     std::unique_ptr<std::istringstream> iSStream_;

@@ -148,6 +148,8 @@ void FmtTool::executeFormatting()
             THROW_FMT_EXCEPTION("Unexpected stream error.");
         }   
     }
+    // The table of formatted data is created. Now, do a pass through it to compute column widths for nice display.
+    computeColumnWidths();
 }
 
 void FmtTool::addToResultTable(const std::string &value)
@@ -160,4 +162,21 @@ void FmtTool::addToResultTable(const std::string &value)
         fmtType->format(outputCols, value);
     }
     results_.push_back(outputCols);  // adds this formatted row to the result table
+}
+
+void FmtTool::prepareTableForDisplay()
+{
+    // Loops over all the data and finds a common width for displaying the table.
+    std::cout << "computing column widths todo etc" << std::endl;
+}
+
+void FmtTool::displayResultTable()
+{
+    // for each row
+    for (const auto &currentRow : results_) {
+        // for each column, display it.  Always right-align the data (its a string type at this point)
+        for (const auto &colPair : currentRow) {
+            std::cout << std::setw(colPair.second) << colPair.first;
+        }
+    }
 }
