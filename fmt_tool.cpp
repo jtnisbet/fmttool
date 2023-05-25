@@ -29,7 +29,6 @@ void FmtTool::parseArgs(std::stringstream *argStream)
     std::string userValues;
     std::string tok;
     int argsProcessed = 0;
-    bool firstInt = true;
     std::unique_ptr<FmtType> newType = nullptr;
     while (*argStream >> tok) {
         size_t typeWidth = 0;  // not all types need a width.  default of 0 is ok.
@@ -42,9 +41,8 @@ void FmtTool::parseArgs(std::stringstream *argStream)
                     THROW_FMT_EXCEPTION("-i argument requires a width argument. (See fmttool -h for help)");
                 }
                 // base class pointer of derived class type
-                newType = std::make_unique<IntType>(typeWidth, firstInt);
+                newType = std::make_unique<IntType>(typeWidth);
                 fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
-                firstInt = false;  // all subsequent ints get false flag.
                 break;
             }
             // -h for help. Does not have any args.
@@ -64,7 +62,7 @@ void FmtTool::parseArgs(std::stringstream *argStream)
     // If there were no args given for type format requests (only user values), then assign a dft formatting config.
     if (fmtTypes_.empty()) {
         // For consistency, this should match the DFT_ARGS variable options
-        newType = std::make_unique<IntType>(32, firstInt);  // base class pointer of derived class type
+        newType = std::make_unique<IntType>(32);  // base class pointer of derived class type
         fmtTypes_.insert(std::move(newType));     // std::set eliminates duplicates
     }
 
@@ -115,13 +113,13 @@ void FmtTool::addTitles()
     // for each format type request, do a lookup into the titles and widths for a title bar of the table.
     // The title consists of 2 lines, the titles themselves and the underscore characters as the second line.
     // Getting these titles produces a vector of pairs (data paired with display width).
-    const string INPUT_TITLE = "input";
+    const std::string INPUT_TITLE = "input";
     std::vector<FmtType::FmtColumn> titleRow;
     std::vector<FmtType::FmtColumn> underscoreRow;
     // Always add the user input string as first column    
     titleRow.emplace_back(INPUT_TITLE, INPUT_TITLE.size());
     // special value of empty string informs the printer to use the width value and write "-"s for the width amount.
-    underscopeRow.emplace_back("", INPUT_TITLE.size());
+    underscoreRow.emplace_back("", INPUT_TITLE.size());
     for (const auto &fmtType : fmtTypes_) {
         fmtType->getTitleRow(titleRow, underscoreRow);
     }
@@ -149,13 +147,13 @@ void FmtTool::executeFormatting()
         }   
     }
     // The table of formatted data is created. Now, do a pass through it to compute column widths for nice display.
-    computeColumnWidths();
+    prepareTableForDisplay();
 }
 
 void FmtTool::addToResultTable(const std::string &value)
 {
     // for each format type request, drive the formatting against the data.
-    // Formatting of each fmr type appends to a vector of pairs (data paired with display width)
+    // Formatting of each fmt type appends to a vector of pairs (data paired with display width)
     std::vector<FmtType::FmtColumn> outputCols;
     outputCols.emplace_back(value, value.size());  // Always add the user input string as first column
     for (const auto &fmtType : fmtTypes_) {

@@ -43,3 +43,33 @@ like format<uint32_t>(std::string value)
 ..however the problem is that each type has different rules I think.
 So I would have custom code and basically need to do template specialization
 for each one. so not much point
+
+----------------
+
+say you have -i 32 -i 64 55 99
+the "firstOfType" logic is broken.
+say you want to format both 32 and 64.
+say that its out of range for 32, but is okay for 64.
+the columns are:
+
+base 10 value    hex value
+-------------    ---------
+
+but the idea was that you don't need to display the base 10 value twice if its the same.
+however, what if you get out of range on the first.  you still want to show it for the second.
+
+thus, we need a feedback from the format to advise on the first of type logic.
+
+no, for now, lets get rid of this idea.
+instead, always show the column for first of type. 
+--------------------
+for now, code compiles.  I got the int8 formatter coded..but I haven't displayed the results I don't think?
+debug this and see what it looks like etc.
+./fmttool -i 8 6
+
+I get:
+660
+
+so..something strange.  do the debugging.  maybe code up the width adjuster as well so that it adds a space
+or two between columns
+

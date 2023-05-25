@@ -23,8 +23,8 @@ int main(int argc, char **argv)
             return 0;
         }
         fmtTool->showFormatRequests();
-        fmtTool->showTitles();
         fmtTool->executeFormatting();
+        fmtTool->displayResultTable();
     } catch (const std::exception &e) {
         std::cout << e.what() << std::endl;
     }

@@ -1,4 +1,5 @@
 #include "int_type.h"
+#include <climits>
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -7,7 +8,7 @@
 #include "fmt_type.h"
 
 // IntType methods
-IntType::IntType(size_t width, bool firstInt) : FmtType(), width_(width), firstInt_(firstInt)
+IntType::IntType(size_t width) : FmtType(), width_(width)
 {
     if (width_ != 8 && width != 16 && width_ != 32 && width_ != 64) {
         THROW_FMT_EXCEPTION("Invalid width value for integer format (-i <width>). Must be 8, 16, 32, or 64.");
@@ -96,28 +97,21 @@ void IntType::format8(std::vector<FmtType::FmtColumn> &formattedCols, const std:
     }
   
     int8_t valueAsType = 0;
-    if (!rangeError) {
-        valueAsType = intValue;  // safe down-cast, we already checked its range
-    }
 
-    // The first column is just the integer representation of the number in base 10.
-    if (firstOfType) {
-        if (rangeError) {
-            formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
-        } else {
-            std::string formattedData = std::to_string(valueAsType);
-            formattedCols.emplace_back(formattedData, formattedData.size());
-        }
+    // First column is the base 10 version of the data
+    if (rangeError) {
+        formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+    } else {
+        valueAsType = intValue;  // safe down-cast, we already checked its range        
+        std::string formattedData = std::to_string(valueAsType);
+        formattedCols.emplace_back(formattedData, formattedData.size());
     }
 
     // The next column will be the hex format of the number. Ensure leading zeros match the bitwidth.
     if (rangeError) {
         formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
     } else {
-        std::stringstream ss;
-        ss << std::hex << std::showbase << std::setw(2) << std::setfill('0') << valueAsType;
-        std::string formattedData = ss.str();
-        formattedCols.emplace_back(formattedData, formattedData.size());
+        FmtNumToHex<int8_t>(formattedCols, valueAsType);
     }
 }
 
@@ -127,6 +121,10 @@ void IntType::format16(std::vector<FmtType::FmtColumn> &formattedCols, const std
 
 void IntType::format32(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)
 {
+
+
+
+    
 }
 
 void IntType::format64(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)

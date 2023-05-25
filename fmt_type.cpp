@@ -5,6 +5,6 @@
 const std::string FmtType::OUT_OF_RANGE = "<out of range>";
 
 // Base methods
-FmtType::FmtType(bool firstOfType) : firstOfType_(firstOfType)
+FmtType::FmtType()
 {
 }

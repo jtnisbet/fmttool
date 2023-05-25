@@ -10,7 +10,7 @@ class FmtType {
 public:
     using FmtColumn = std::pair<std::string, size_t>;
 
-    FmtType(bool firstOfType);
+    FmtType();
     virtual ~FmtType() = default;
 
     // For use with std::set comparison and duplicate elimination
@@ -28,5 +28,4 @@ public:
                              std::vector<FmtType::FmtColumn> &underscoreRow) const = 0;
 protected:
     static const std::string OUT_OF_RANGE;
-    bool firstOfType_;
 };
