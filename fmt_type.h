@@ -8,6 +8,8 @@
 
 class FmtType {
 public:
+    // For display data, the data is a string.  We need a size because the column can be a size that is different from
+    // the size of the data itself for column alignment.
     using FmtColumn = std::pair<std::string, size_t>;
 
     FmtType();

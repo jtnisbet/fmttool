@@ -36,7 +36,8 @@ public:
     void executeFormatting();
     void displayResultTable();
 private:
-    using ResultTable = std::vector<std::vector<FmtType::FmtColumn>>;  // rows of columns
+    using FmtColList = std::vector<FmtType::FmtColumn>;  // the columns
+    using ResultTable = std::vector<FmtColList>;  // rows of columns
     void addToResultTable(const std::string &value);
     void prepareTableForDisplay();
     std::unordered_map<std::string, CmdArg> cmdArgMap_;

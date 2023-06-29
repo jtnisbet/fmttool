@@ -24,24 +24,22 @@ std::string IntType::toString() const
 
 void IntType::format(std::vector<FmtColumn> &formattedCols, const std::string &value)
 {
-    // to do
-    std::cout << "doing an integer format(" << width_ << ") on value: " << value << std::endl;
-
     switch(width_) {
         case 8: {
-            format8(formattedCols, value);
+            format<int8_t>(formattedCols, value);
+            //format8(formattedCols, value);
             break;
         }
         case 16: {
-            format16(formattedCols, value);
+//            format<int16_t>(formattedCols, value);
             break;
         }
         case 32: {
-            format32(formattedCols, value);            
+//            format<int32_t>(formattedCols, value);            
             break;
         }
         case 64: {
-            format64(formattedCols, value);            
+//            format<int64_t>(formattedCols, value);            
             break;
         }
         default: {
@@ -55,34 +53,39 @@ void IntType::format(std::vector<FmtColumn> &formattedCols, const std::string &v
 void IntType::getTitleRow(std::vector<FmtType::FmtColumn> &titleRow,
                           std::vector<FmtType::FmtColumn> &underscoreRow) const
 {
-    // do this later
-    titleRow.emplace_back("title goes here", 15);
-    underscoreRow.emplace_back("---------------", 15);
+    const std::string BASE_10 = "Base 10";
+    const std::string BASE_16 = "Hex";
+    // This type provides 2 columns: decimal formatted and hex formatted.
+    // Empty string instructs the displayer code to write '-' characters to make an underline.
+    titleRow.emplace_back(BASE_10, BASE_10.size());
+    underscoreRow.emplace_back("", BASE_10.size());
+    titleRow.emplace_back(BASE_16, BASE_16.size());
+    underscoreRow.emplace_back("", BASE_16.size());
 }
 
-void IntType::format8(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)
+// A note on the formatting:
+// std::stoi has the ability to read the negative sign, as well as 0x prefix to convert string hex intputs. The 3rd arg
+// is the "base". Special value of 0 means it will try to auto-detect. For example, if the input is 0x12 it will format
+// as base 16 (hex). If 012 it assumes octal etc. Otherwise it assume base 10.
+// What happens if the value is too large for the defined type, or other invalid values?
+// Exceptions:
+// std::invalid_argument if no conversion could be performed
+// std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
+// function sets errno to ERANGE.
+
+// Specialization for the int8_t
+template <>
+int8_t IntType::StringToNum<int8_t>(const std::string &value, bool &rangeError)
 {
     int intValue;
-    bool rangeError = false;
-
     // There does not exist any formatter that converts directly to an 8-bit int, so we use the int version first and
-    // then assign it down if its in the valid range.
-    // std::stoi has the ability to read the negative sign, as well as 0x prefix to convert string hex intputs. The 3rd
-    // arg is the "base". Special value of 0 means it will try to auto-detect. For example, if the input is 0x12 it will
-    // format as base 16 (hex). If 012 it assumes octal etc. Otherwise it assume base 10.
-
-    // What happens if the value is too large for an 8-bit int, or other invalid values?
-    // Exceptions:
-    // std::invalid_argument if no conversion could be performed
-    // std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
-    // function sets errno to ERANGE.
+    // then assign it down if its in the valid range. We do this because we want to correctly show the range error
+    // if the data given exceeds the type width.
     try {
         intValue = std::stoi(value, nullptr, 0);
     }
     catch (std::invalid_argument const& ex)
     {
-        // rethrow as my own exception    
-        // Can dump this for more info: ex.what()
         THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
     }
     catch(std::out_of_range const& ex)
@@ -95,38 +98,46 @@ void IntType::format8(std::vector<FmtType::FmtColumn> &formattedCols, const std:
     if (intValue < SCHAR_MIN || intValue > SCHAR_MAX) {
         rangeError = true;
     }
-  
+
     int8_t valueAsType = 0;
-
-    // First column is the base 10 version of the data
-    if (rangeError) {
-        formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
-    } else {
-        valueAsType = intValue;  // safe down-cast, we already checked its range        
-        std::string formattedData = std::to_string(valueAsType);
-        formattedCols.emplace_back(formattedData, formattedData.size());
+    if (!rangeError) {
+        valueAsType = intValue;  // range already checked, this is safe downcast
     }
+        
+    return valueAsType;
+}
 
-    // The next column will be the hex format of the number. Ensure leading zeros match the bitwidth.
-    if (rangeError) {
-        formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
-    } else {
-        FmtNumToHex<int8_t>(formattedCols, valueAsType);
+// Specialization for the int32_t
+template <>
+int32_t IntType::StringToNum<int32_t>(const std::string &value, bool &rangeError)
+{
+    int32_t valueAsType = 0;
+    try {
+        // stoi returns regular int. Not very portable here, but lets just assume that int32_t and int
+        // are the same thing and just do it.
+        valueAsType = std::stoi(value, nullptr, 0);
     }
+    catch (std::invalid_argument const& ex)
+    {
+        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
+    }
+    catch(std::out_of_range const& ex)
+    {
+        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
+        rangeError = true;
+    }
+    return valueAsType;
 }
 
-void IntType::format16(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)
+// specialization for int8_t. The general method for converting to hex doesnt' work for this one.
+// cast the single byte to int32_t first.
+template <>
+void IntType::FmtNumToHex<int8_t>(std::vector<FmtType::FmtColumn> &formattedCols, int8_t valueAsType)
 {
-}
-
-void IntType::format32(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)
-{
-
-
-
-    
-}
-
-void IntType::format64(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)
-{
+    std::stringstream ss;
+    // std::show_base doesn't work well along with setw. it always put the 0x in the wrong place.
+    // Thus just manually put 0x in there for now.
+    ss << std::hex << "0x" << std::setw(2) << std::setfill('0') << static_cast<int32_t>(valueAsType);
+    std::string formattedData = ss.str();
+    formattedCols.emplace_back(formattedData, formattedData.size());
 }

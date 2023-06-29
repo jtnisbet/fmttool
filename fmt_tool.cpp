@@ -110,16 +110,19 @@ bool FmtTool::showHelp()
 
 void FmtTool::addTitles()
 {
+    const std::string INPUT_TITLE = "input";
+    FmtColList titleRow;
+    FmtColList underscoreRow;
+
     // for each format type request, do a lookup into the titles and widths for a title bar of the table.
     // The title consists of 2 lines, the titles themselves and the underscore characters as the second line.
     // Getting these titles produces a vector of pairs (data paired with display width).
-    const std::string INPUT_TITLE = "input";
-    std::vector<FmtType::FmtColumn> titleRow;
-    std::vector<FmtType::FmtColumn> underscoreRow;
-    // Always add the user input string as first column    
+
+    // First column, the user input.  We always show this as the first column
     titleRow.emplace_back(INPUT_TITLE, INPUT_TITLE.size());
-    // special value of empty string informs the printer to use the width value and write "-"s for the width amount.
     underscoreRow.emplace_back("", INPUT_TITLE.size());
+
+    // Then, add the rest of the columns.  Each FmtType might add more than one
     for (const auto &fmtType : fmtTypes_) {
         fmtType->getTitleRow(titleRow, underscoreRow);
     }
@@ -133,6 +136,7 @@ void FmtTool::executeFormatting()
     // For each value, execute the requested formatting against that value.
     bool moreData = true;
     std::string currValue;
+    addTitles();
     while (moreData) {
         if (*inStream_ >> currValue) {
             addToResultTable(currValue);  // formats the value into the result table
@@ -154,7 +158,7 @@ void FmtTool::addToResultTable(const std::string &value)
 {
     // for each format type request, drive the formatting against the data.
     // Formatting of each fmt type appends to a vector of pairs (data paired with display width)
-    std::vector<FmtType::FmtColumn> outputCols;
+    FmtColList outputCols;
     outputCols.emplace_back(value, value.size());  // Always add the user input string as first column
     for (const auto &fmtType : fmtTypes_) {
         fmtType->format(outputCols, value);
@@ -164,17 +168,68 @@ void FmtTool::addToResultTable(const std::string &value)
 
 void FmtTool::prepareTableForDisplay()
 {
-    // Loops over all the data and finds a common width for displaying the table.
-    std::cout << "computing column widths todo etc" << std::endl;
+    // Loops over all the data and find a common width for each column displaying the table
+    auto resultsIter = std::begin(results_);
+    std::vector<size_t> savedWidths(resultsIter->size(), 0);  // all saved widths have 0 width to start.
+    while (resultsIter != std::end(results_)) {
+        // for each column of the row, check if the width is greater than the saved width for that column
+        auto savedWidthsIter = std::begin(savedWidths);
+        auto colIter = std::cbegin(*resultsIter);
+        while (colIter != std::cend(*resultsIter)) {
+            if (colIter->second > *savedWidthsIter) {
+                (*savedWidthsIter) = colIter->second;  // assign the larger value to the final width
+            }
+            ++savedWidthsIter;
+            ++colIter;
+        }
+        ++resultsIter;
+    }
+
+    // Now that the optimal widths are computed, change all the widths of each value
+    // Technically this is a bit wasteful since we only have one row of final widths, but its easier for the
+    // displayer code if doesn't have to iterate a second vector.
+    for (auto &currentRow : results_) {
+        auto colIter = std::begin(currentRow);
+        auto savedWidthsIter = std::begin(savedWidths);
+        while (colIter != std::end(currentRow)) {
+            colIter->second = *savedWidthsIter;
+            ++savedWidthsIter;
+            ++colIter;
+        }
+    }
 }
 
 void FmtTool::displayResultTable()
 {
-    // for each row
-    for (const auto &currentRow : results_) {
-        // for each column, display it.  Always right-align the data (its a string type at this point)
-        for (const auto &colPair : currentRow) {
-            std::cout << std::setw(colPair.second) << colPair.first;
-        }
+    const int COL_SPACE = 2;  // Provide 2 whitespaces in between each column
+    auto resultsIter = std::cbegin(results_);
+
+    // first row is the title
+    for (const auto &colPair : *resultsIter) {
+        std::cout << std::setw(colPair.second) << colPair.first << std::setfill(' ') << std::setw(COL_SPACE) << "";
     }
+    std::cout << "\n";
+    ++resultsIter;
+    
+    // second row is the underscore line
+    for (const auto &colPair : *resultsIter) {
+        // empty string with fill character to make the underscores
+        if (!colPair.first.empty()) {
+            THROW_FMT_EXCEPTION("Underscore line expected to have empty value.");
+        }
+        std::cout << std::setfill('-') << std::setw(colPair.second) << colPair.first << std::setfill(' ')
+                  << std::setw(COL_SPACE) << "";
+    }
+    std::cout << "\n";
+    ++resultsIter;
+
+    while (resultsIter != std::cend(results_)) {
+        for (const auto &colPair : *resultsIter) {
+            std::cout << std::setw(colPair.second) << colPair.first << std::setfill(' ') << std::setw(COL_SPACE) << "";
+        }
+        std::cout << "\n";
+        ++resultsIter;
+    }
+
+    std::cout << std::endl;
 }
