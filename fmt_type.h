@@ -26,7 +26,7 @@ public:
     virtual std::string toString() const = 0;
     virtual void format(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value) = 0;
     virtual size_t getCompareHash() const = 0;
-    virtual void getTitleRow(std::vector<FmtType::FmtColumn> &titleRow,
+    virtual void getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vector<FmtType::FmtColumn> &titleRow2,
                              std::vector<FmtType::FmtColumn> &underscoreRow) const = 0;
 protected:
     static const std::string OUT_OF_RANGE;

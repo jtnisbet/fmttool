@@ -6,12 +6,14 @@
 #include "int_type.h"
 
 const std::string FmtTool::DFT_ARGS = "-i 32";
+const int FmtTool::COL_SPACE = 2;  // Provide 2 whitespaces in between each column
 
 FmtTool::FmtTool() : iSStream_(nullptr), inStream_(nullptr), helpRequested_(false)
 {
     // Populate the formatting type map argument options.
     // This is done so that we may do switch during argument parsing of the input args
     cmdArgMap_["-i"] = CmdArg::INT;
+    cmdArgMap_["-u"] = CmdArg::UINT;    
     cmdArgMap_["-a"] = CmdArg::ASCII;
     cmdArgMap_["-b"] = CmdArg::BINARY;
     cmdArgMap_["-h"] = CmdArg::HELP;
@@ -35,13 +37,15 @@ void FmtTool::parseArgs(std::stringstream *argStream)
         CmdArg currArg = cmdArgMap_[tok];
         switch(currArg) {
             // -i <width>
-            case (CmdArg::INT): {
+            case (CmdArg::INT):
+            case (CmdArg::UINT): {
                 // A width argument is required. Fetch it from the arg stream, converted to size_t
                 if (!(*argStream >> typeWidth)) {
-                    THROW_FMT_EXCEPTION("-i argument requires a width argument. (See fmttool -h for help)");
+                    THROW_FMT_EXCEPTION("-i and -u types require a width argument. (See fmttool -h for help)");
                 }
+                bool isSigned = (currArg == CmdArg::INT) ? true : false;
                 // base class pointer of derived class type
-                newType = std::make_unique<IntType>(typeWidth);
+                newType = std::make_unique<IntType>(typeWidth, isSigned);
                 fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
                 break;
             }
@@ -62,7 +66,7 @@ void FmtTool::parseArgs(std::stringstream *argStream)
     // If there were no args given for type format requests (only user values), then assign a dft formatting config.
     if (fmtTypes_.empty()) {
         // For consistency, this should match the DFT_ARGS variable options
-        newType = std::make_unique<IntType>(32);  // base class pointer of derived class type
+        newType = std::make_unique<IntType>(32, true);  // base class pointer of derived class type
         fmtTypes_.insert(std::move(newType));     // std::set eliminates duplicates
     }
 
@@ -79,15 +83,6 @@ void FmtTool::parseArgs(std::stringstream *argStream)
         // iSStream remains nullptr and is not used
         inStream_ = &std::cin;
     }
-}
-
-void FmtTool::showFormatRequests()
-{
-    std::cout << "Requested formatting types:\n";
-    for (auto &fmtType : fmtTypes_) {
-        std::cout << fmtType->toString() << "\n";
-    }
-    std::cout << std::endl;
 }
 
 bool FmtTool::showHelp()
@@ -111,22 +106,26 @@ bool FmtTool::showHelp()
 void FmtTool::addTitles()
 {
     const std::string INPUT_TITLE = "input";
-    FmtColList titleRow;
+    FmtColList titleRow1;
+    FmtColList titleRow2;
     FmtColList underscoreRow;
 
     // for each format type request, do a lookup into the titles and widths for a title bar of the table.
-    // The title consists of 2 lines, the titles themselves and the underscore characters as the second line.
+    // The title consists of 3 lines, the titles themselves have 2 lines, and the 3rd line is an underscore line.
     // Getting these titles produces a vector of pairs (data paired with display width).
 
-    // First column, the user input.  We always show this as the first column
-    titleRow.emplace_back(INPUT_TITLE, INPUT_TITLE.size());
+    // First column, the user input.  We always show this as the first column. The first row of this title is
+    // empty string.
+    titleRow1.emplace_back("", INPUT_TITLE.size());
+    titleRow2.emplace_back(INPUT_TITLE, INPUT_TITLE.size());
     underscoreRow.emplace_back("", INPUT_TITLE.size());
 
     // Then, add the rest of the columns.  Each FmtType might add more than one
     for (const auto &fmtType : fmtTypes_) {
-        fmtType->getTitleRow(titleRow, underscoreRow);
+        fmtType->getTitleRow(titleRow1, titleRow2, underscoreRow);
     }
-    results_.push_back(titleRow);  // adds the title row
+    results_.push_back(titleRow1);  // adds the title row
+    results_.push_back(titleRow2);  // adds the title row
     results_.push_back(underscoreRow);  // adds the underscore row
 }
 
@@ -199,19 +198,25 @@ void FmtTool::prepareTableForDisplay()
     }
 }
 
-void FmtTool::displayResultTable()
+void FmtTool::showRow(ResultTable::const_iterator &resultsIter)
 {
-    const int COL_SPACE = 2;  // Provide 2 whitespaces in between each column
-    auto resultsIter = std::cbegin(results_);
-
-    // first row is the title
     for (const auto &colPair : *resultsIter) {
         std::cout << std::setw(colPair.second) << colPair.first << std::setfill(' ') << std::setw(COL_SPACE) << "";
     }
-    std::cout << "\n";
+    std::cout << "\n"; 
+}
+
+void FmtTool::displayResultTable()
+{
+    auto resultsIter = std::cbegin(results_);
+
+    // first 2 rows are the title
+    showRow(resultsIter);
+    ++resultsIter;
+    showRow(resultsIter);
     ++resultsIter;
     
-    // second row is the underscore line
+    // 3rd row is the underscore lines
     for (const auto &colPair : *resultsIter) {
         // empty string with fill character to make the underscores
         if (!colPair.first.empty()) {
@@ -224,10 +229,7 @@ void FmtTool::displayResultTable()
     ++resultsIter;
 
     while (resultsIter != std::cend(results_)) {
-        for (const auto &colPair : *resultsIter) {
-            std::cout << std::setw(colPair.second) << colPair.first << std::setfill(' ') << std::setw(COL_SPACE) << "";
-        }
-        std::cout << "\n";
+        showRow(resultsIter);
         ++resultsIter;
     }
 

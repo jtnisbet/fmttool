@@ -22,7 +22,6 @@ int main(int argc, char **argv)
         if (fmtTool->showHelp()) {
             return 0;
         }
-        fmtTool->showFormatRequests();
         fmtTool->executeFormatting();
         fmtTool->displayResultTable();
     } catch (const std::exception &e) {
