@@ -14,6 +14,9 @@ can you do: echo "45" | fmttool -i 32
 so can we part both the | and the command args?
 
 --------
-
-so for signed vs unsigned...later I'll add a -u.
-It might be able to share the same fmt type as int_type though, but not sure.
+things are going well.
+todo: test the hex inputs for the numbers, add them to testcase.
+then after that, I guess work on the binary or ascii options?
+given a string of letters, show the hex bytes of the ascii chars
+given a hex input number, treat it as an array of chars and show the ascii
+   char string of that data.

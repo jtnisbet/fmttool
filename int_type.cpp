@@ -56,15 +56,27 @@ void IntType::format(std::vector<FmtColumn> &formattedCols, const std::string &v
             break;
         }
         case 16: {
-            format<int16_t>(formattedCols, value);
+            if (isSigned_) {
+                format<int16_t>(formattedCols, value);
+            } else {
+                format<uint16_t>(formattedCols, value);
+            }
             break;
         }
         case 32: {
-            format<int32_t>(formattedCols, value);            
+            if (isSigned_) {
+                format<int32_t>(formattedCols, value);
+            } else {
+                format<uint32_t>(formattedCols, value);
+            }
             break;
         }
         case 64: {
-//            format<int64_t>(formattedCols, value);            
+            if (isSigned_) {
+                format<int64_t>(formattedCols, value);
+            } else {
+                format<uint64_t>(formattedCols, value);
+            }
             break;
         }
         default: {
@@ -92,28 +104,6 @@ void IntType::getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vecto
     underscoreRow.emplace_back("", BASE_16.size());
 }
 
-/*
-int IntType::StringToNumAsInt(const std::string &value, bool &rangeError)
-{
-    int intValue;
-    // There does not exist any formatter that converts directly to an 8-bit int, so we use the int version first and
-    // then assign it down if its in the valid range. We do this because we want to correctly show the range error
-    // if the data given exceeds the type width.
-    try {
-        intValue = std::stoi(value, nullptr, 0);
-    }
-    catch (std::invalid_argument const& ex)
-    {
-        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
-    }
-    catch(std::out_of_range const& ex)
-    {
-        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
-        rangeError = true;
-    }
-    return intValue;
-    }*/
-
 // A note on the formatting:
 // std::stoi has the ability to read the negative sign, as well as 0x prefix to convert string hex intputs. The 3rd arg
 // is the "base". Special value of 0 means it will try to auto-detect. For example, if the input is 0x12 it will format
@@ -123,56 +113,6 @@ int IntType::StringToNumAsInt(const std::string &value, bool &rangeError)
 // std::invalid_argument if no conversion could be performed
 // std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
 // function sets errno to ERANGE.
-
-// Specialization for the int8_t
-template <>
-int8_t IntType::StringToNum<int8_t>(const std::string &value, bool &rangeError)
-{
-    return StringToNumUsingInt<int8_t>(value, rangeError);
-}
-
-// Specialization for the uint8_t
-template <>
-uint8_t IntType::StringToNum<uint8_t>(const std::string &value, bool &rangeError)
-{
-    return StringToNumUsingInt<uint8_t>(value, rangeError); 
-}
-
-// Specialization for the int16_t
-template <>
-int16_t IntType::StringToNum<int16_t>(const std::string &value, bool &rangeError)
-{
-    return StringToNumUsingInt<int16_t>(value, rangeError); 
-}
-
-// Specialization for the uint16_t
-template <>
-uint16_t IntType::StringToNum<uint16_t>(const std::string &value, bool &rangeError)
-{
-    return StringToNumUsingInt<uint16_t>(value, rangeError); 
-}
-
-// Specialization for the int32_t
-template <>
-int32_t IntType::StringToNum<int32_t>(const std::string &value, bool &rangeError)
-{
-    int32_t valueAsType = 0;
-    try {
-        // stoi returns regular int. Not very portable here, but lets just assume that int32_t and int
-        // are the same thing and just do it.
-        valueAsType = std::stoi(value, nullptr, 0);
-    }
-    catch (std::invalid_argument const& ex)
-    {
-        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
-    }
-    catch(std::out_of_range const& ex)
-    {
-        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
-        rangeError = true;
-    }
-    return valueAsType;
-}
 
 // specialization for int8_t. The general method for converting to hex doesnt' work for this one.
 // cast the single byte to int32_t first.
