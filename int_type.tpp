@@ -9,13 +9,13 @@ void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::
     if (std::numeric_limits<T>::digits <= std::numeric_limits<int>::digits) {
         // If the number of bits for this type can fit in an integer, then we'll use the std::stoi
         // integer version of the code to convert the string to int.
-        valueAsType = StringToNumUsingInt<T>(value, rangeError);
+        valueAsType = stringToNumUsingInt<T>(value, rangeError);
     } else if (std::numeric_limits<T>::digits <= std::numeric_limits<long int>::digits) {
         // If the number of bits for this type is too big for an int, the next size to use is the long int version.
-        valueAsType = StringToNumUsingLongInt<T>(value, rangeError);
+        valueAsType = stringToNumUsingLongInt<T>(value, rangeError);
     } else if (std::numeric_limits<T>::digits <= std::numeric_limits<unsigned long long int>::digits) {
         // If the number of bits for this type is too big for an int, the next size to use is the long long int version.
-        valueAsType = StringToNumUsingLongLongInt<T>(value, rangeError);
+        valueAsType = stringToNumUsingLongLongInt<T>(value, rangeError);
     } else {
         std::string errMsg("Type too large for formatting. Number type width: ");
         errMsg += std::to_string(std::numeric_limits<T>::digits) + " and std::stoll width: "
@@ -36,12 +36,12 @@ void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::
     if (rangeError) {
         formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
     } else {
-        FmtNumToHex<T>(formattedCols, valueAsType);
+        fmtNumToHex<T>(formattedCols, valueAsType);
     }   
 }
 
 template <typename T>
-void IntType::FmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valueAsType)
+void IntType::fmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valueAsType)
 {
     std::stringstream ss;
     // Each byte of the integer type takes 2 characters of width
@@ -70,14 +70,14 @@ void IntType::FmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valu
 // cannot rely on the std::out_of_range exception to correctly catch range violations here.
 // Thus, we also add additional checks on the limits if the out_of_range didn't catch it.
 // Lastly, we provide 3 version:
-// StringToNumUsingInt
-// StringToNumUsingLongInt
-// StringToNumUsingLongLongInt
+// stringToNumUsingInt
+// stringToNumUsingLongInt
+// stringToNumUsingLongLongInt
 // Caller must choose the correct version that uses a type that is large enough for the target type we are converting to
 // The caller function IntType::format(...) computes the widths and choose correct function to call.
 
 template <typename T>
-T IntType::StringToNumUsingInt(const std::string &value, bool &rangeError)
+T IntType::stringToNumUsingInt(const std::string &value, bool &rangeError)
 {
     T valueAsType = 0;
     int intValue;
@@ -127,7 +127,7 @@ T IntType::StringToNumUsingInt(const std::string &value, bool &rangeError)
 }
 
 template <typename T>
-T IntType::StringToNumUsingLongInt(const std::string &value, bool &rangeError)
+T IntType::stringToNumUsingLongInt(const std::string &value, bool &rangeError)
 {
     T valueAsType = 0;
     long int intValue;
@@ -158,7 +158,7 @@ T IntType::StringToNumUsingLongInt(const std::string &value, bool &rangeError)
 }
 
 template <typename T>
-T IntType::StringToNumUsingLongLongInt(const std::string &value, bool &rangeError)
+T IntType::stringToNumUsingLongLongInt(const std::string &value, bool &rangeError)
 {
     T valueAsType = 0;
     unsigned long long int intValue;

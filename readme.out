@@ -22,3 +22,12 @@ then after that, I guess work on the binary or ascii options?
 given a string of letters, show the hex bytes of the ascii chars
 given a hex input number, treat it as an array of chars and show the ascii
    char string of that data.
+
+going back to some code cleanup first.
+
+Instead of having a function for each width of atoi...
+do this with a template, and then have template specializations
+only the part that does the atoi.  the rest of the code should be common.
+
+yeah..try this.  undo my range change.
+make the string to num using X common

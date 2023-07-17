@@ -117,7 +117,7 @@ void IntType::getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vecto
 // specialization for int8_t. The general method for converting to hex doesnt' work for this one.
 // cast the single byte to int32_t first.
 template <>
-void IntType::FmtNumToHex<int8_t>(std::vector<FmtType::FmtColumn> &formattedCols, int8_t valueAsType)
+void IntType::fmtNumToHex<int8_t>(std::vector<FmtType::FmtColumn> &formattedCols, int8_t valueAsType)
 {
     std::stringstream ss;
     // For negative numbers, casting to 4 byte type adds lots of 0xFF's. But there's only one byte
@@ -135,7 +135,7 @@ void IntType::FmtNumToHex<int8_t>(std::vector<FmtType::FmtColumn> &formattedCols
 // specialization for uint8_t. The general method for converting to hex doesnt' work for this one.
 // cast the single byte to uint32_t first.
 template <>
-void IntType::FmtNumToHex<uint8_t>(std::vector<FmtType::FmtColumn> &formattedCols, uint8_t valueAsType)
+void IntType::fmtNumToHex<uint8_t>(std::vector<FmtType::FmtColumn> &formattedCols, uint8_t valueAsType)
 {
     std::stringstream ss;
     ss << std::hex << "0x" << std::setw(2) << std::setfill('0') << static_cast<uint32_t>(valueAsType);

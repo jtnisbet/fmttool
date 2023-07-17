@@ -25,19 +25,19 @@ public:
                      std::vector<FmtType::FmtColumn> &underscoreRow) const override;
 private:
     template <typename T>
-    T StringToNumUsingInt(const std::string &value, bool &rangeError);
+    T stringToNumUsingInt(const std::string &value, bool &rangeError);
 
     template <typename T>
-    T StringToNumUsingLongInt(const std::string &value, bool &rangeError);
+    T stringToNumUsingLongInt(const std::string &value, bool &rangeError);
 
     template <typename T>
-    T StringToNumUsingLongLongInt(const std::string &value, bool &rangeError);
+    T stringToNumUsingLongLongInt(const std::string &value, bool &rangeError);
 
     template <typename T>
-    T StringToNum(const std::string &value, bool &rangeError);
+    T stringToNum(const std::string &xvalue, bool &rangeError);
     
     template <typename T>
-    void FmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valueAsType);
+    void fmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valueAsType);
 
     template <typename T>
     void format(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value);
