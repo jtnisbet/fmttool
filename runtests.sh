@@ -1,12 +1,25 @@
 #!/bin/bash
 
+# A note on negatives when inputting hex
+# --------------------------------------
+# We treat the hex input as if the user is intending the data to be the internal storage of the number.
+# For example, 0xfe, numerically is the decimal number 254.  So is 0x00fe.
+# However, since our intention is that this number will be formatted to the bitwise specification of an
+# integer, if we format 0xfe as a int8 then it is the number -2, not 254.  If you try to input 254 as an
+# int8 it will fail with a range overflow.
+# Further, the leading zero's play a role.  As an int8, 0x00fe signals the user ingention that this number
+# is really 254, not -2, whereas 0xfe (the precise width of the type) is intended to be -2.
+# Lastly, it would be really strange to input negative hex numbers.
+# i.e. -0xfe.  That doesn't follow the idea of supporting the internal storage of the number.
+# Right now I don't check for this, but it will probably try to format this as -254
+
 echo "Test signed 8 bit int"
-./fmttool -i 8 -129 -128 127 128
+./fmttool -i 8 -129 -128 127 128 0x80 0x7f 0xfe 0x00fe
 echo
 echo "Test unsigned 8 bit int"
 ./fmttool -u 8 -1 0 255 256
 echo "Test signed 16 bit int"
-./fmttool -i 16 -32769 -32768 32767 32768
+./fmttool -i 16 -32769 -32768 32767 32768 0x8000 0x00008000
 echo
 echo "Test unsigned 16 bit int"
 ./fmttool -u 16 -1 0 65535 65536

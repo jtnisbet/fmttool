@@ -93,10 +93,29 @@ T IntType::StringToNumUsingInt(const std::string &value, bool &rangeError)
         // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
         rangeError = true;
     }
-    
-    // The int value is bigger width than the types we are checking. Thus, manually check the limits of the type
-    // here to produce range errors in case the "catch" didn't get it.
+
+    if (isSigned_ && value.compare(0,2, "0x") == 0) {
+        // If the number was a hex input, we allow the user to produce a negative number if the hex input has
+        // the correct byte size for the type (and the number is in fact a negative number). For example:
+        // 0xfe is -2 for int8_t. But, 0x00fe is 254 for int16_t, even though 0xfe and 0x00fe is the same number
+        // numerically. Thus, if they provide leading zero's, assume its not negative.
+        if (value[2] != '0' && ((value.size() - 2) / 2) == sizeof(T)) {
+            // There was not a leading zero character, so this could be a negative number.
+            // The amount of characters precisely match the length of the type.
+            // example: 0x8000 is 4 characters, or "2 bytes of hex input" and the type is int16_t which is 2 bytes.
+            // At this point, since the character widths match, it is safe to lay down the number into its actual type.
+            // For example, since we used a 4-byte integer to do the format, we currently have this in memory for
+            // intValue: 0x00008000
+            // We can can then cast it down without losing anything:
+            valueAsType = intValue;
+            std::cout << "assigned the value: " << valueAsType << std::endl;
+            return valueAsType;
+        }
+    }
+
     if (intValue < std::numeric_limits<T>::min() || intValue > std::numeric_limits<T>::max()) {
+        // The int value is bigger width than the types we are checking. Thus, manually check the limits of the type
+        // here to produce range errors in case the "catch" didn't get it.
         rangeError = true;
     }
 

@@ -15,7 +15,9 @@ so can we part both the | and the command args?
 
 --------
 things are going well.
-todo: test the hex inputs for the numbers, add them to testcase.
+doing the hex input for negatives as the moment.
+fixed the 4 byte version...need to update the others I think.
+
 then after that, I guess work on the binary or ascii options?
 given a string of letters, show the hex bytes of the ascii chars
 given a hex input number, treat it as an array of chars and show the ascii
