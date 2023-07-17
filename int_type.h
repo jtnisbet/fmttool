@@ -24,22 +24,16 @@ public:
     void getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vector<FmtType::FmtColumn> &titleRow2,
                      std::vector<FmtType::FmtColumn> &underscoreRow) const override;
 private:
-    template <typename T>
-    T stringToNumUsingInt(const std::string &value, bool &rangeError);
+    // Convert to the target number type by calling appropriate sto* function.
+    // Only supports int, long int, and unsigned long long int.
+    // All other types are not allowed.
+    template <typename I>
+    I stringToNum(const std::string &value, bool &rangeError);
 
-    template <typename T>
-    T stringToNumUsingLongInt(const std::string &value, bool &rangeError);
-
-    template <typename T>
-    T stringToNumUsingLongLongInt(const std::string &value, bool &rangeError);
-
-    template <typename T>
-    T stringToNum(const std::string &xvalue, bool &rangeError);
-    
     template <typename T>
     void fmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valueAsType);
 
-    template <typename T>
+    template <typename T, typename I>
     void format(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value);
 
     size_t width_;

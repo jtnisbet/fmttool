@@ -24,10 +24,7 @@ given a hex input number, treat it as an array of chars and show the ascii
    char string of that data.
 
 going back to some code cleanup first.
-
-Instead of having a function for each width of atoi...
-do this with a template, and then have template specializations
-only the part that does the atoi.  the rest of the code should be common.
-
-yeah..try this.  undo my range change.
-make the string to num using X common
+done..but want to clean up.
+make a compile time check instead of runtime for bad type support.
+also rework that if statement etc.
+double check all types are correct.  add testcases for these negatives for hex etc.

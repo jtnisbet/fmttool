@@ -1,27 +1,61 @@
 // included directly from int_type.h
 // Put in this file to separate implementation from the class
 
-template <typename T>
+// A note on the formatting:
+// std::stoi has the ability to read the negative sign, as well as 0x prefix to convert string hex intputs. The 3rd arg
+// is the "base". Special value of 0 means it will try to auto-detect. For example, if the input is 0x12 it will format
+// as base 16 (hex). If 012 it assumes octal etc. Otherwise it assume base 10.
+// What happens if the value is too large for the defined type, or other invalid values?
+// Exceptions:
+// std::invalid_argument if no conversion could be performed
+// std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
+// function sets errno to ERANGE.
+// The conversion functions: std::stoi, std::stol, std::stoull convert to an integer width that might be different from
+// the width we want.
+// For example, std::stoi creates a signed 32-bit integer as a result. But if our target type is int16_t, then we
+// cannot rely on the std::out_of_range exception to correctly catch range violations here.
+// Thus, we also add additional checks on the limits if the out_of_range didn't catch it.
+// Caller must choose the correct version that uses a type that is large enough for the target type we are converting to
+// The caller function IntType::format(...) computes the widths and choose correct function to call, using the second
+// template arg to decide which std::sto* function to call.
+//
+// Rules for negative numbers when user provides hex input:
+// If the number was a hex input, we allow the user to produce a negative number if the hex input has the correct byte
+// size for the type (and the number is in fact a negative number). For example:
+// 0xfe is -2 for int8_t. But, 0x00fe is 254 for int16_t, even though 0xfe and 0x00fe is the same number numerically.
+// In other words, assume that the user wants to see the negative if they give the exact byte size matching.
+
+template <typename T, typename I>
 void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)
 {
     bool rangeError = false;
-    T valueAsType;
-    if (std::numeric_limits<T>::digits <= std::numeric_limits<int>::digits) {
-        // If the number of bits for this type can fit in an integer, then we'll use the std::stoi
-        // integer version of the code to convert the string to int.
-        valueAsType = stringToNumUsingInt<T>(value, rangeError);
-    } else if (std::numeric_limits<T>::digits <= std::numeric_limits<long int>::digits) {
-        // If the number of bits for this type is too big for an int, the next size to use is the long int version.
-        valueAsType = stringToNumUsingLongInt<T>(value, rangeError);
-    } else if (std::numeric_limits<T>::digits <= std::numeric_limits<unsigned long long int>::digits) {
-        // If the number of bits for this type is too big for an int, the next size to use is the long long int version.
-        valueAsType = stringToNumUsingLongLongInt<T>(value, rangeError);
-    } else {
+    T valueAsType = 0;
+
+    if (std::numeric_limits<T>::digits > std::numeric_limits<I>::digits) {
         std::string errMsg("Type too large for formatting. Number type width: ");
-        errMsg += std::to_string(std::numeric_limits<T>::digits) + " and std::stoll width: "
-            + std::to_string(std::numeric_limits<long long int>::digits);
-        // Shouldn't really be possible to hit this path.
-        THROW_FMT_EXCEPTION(errMsg);
+        errMsg += std::to_string(std::numeric_limits<T>::digits) + " and std::sto* width: "
+            + std::to_string(std::numeric_limits<I>::digits);
+        THROW_FMT_EXCEPTION(errMsg);        
+    }
+
+    // call the atoi wrapper using the type size specification template arg.
+    // This is not the final number, just the result of the atoi call representated as the type from the atoi call.
+    I intValue = stringToNum<I>(value, rangeError);
+
+    // clean this up later.  the if statements can be reworked I think...notice the duplicate value as type and
+    // funny range error check things
+    if (isSigned_ && value.compare(0,2, "0x") == 0 && value[2] != '0' && ((value.size() - 2) / 2) == sizeof(T)) {
+        valueAsType = intValue;
+    } else {
+        if (intValue < std::numeric_limits<T>::min() || intValue > std::numeric_limits<T>::max()) {
+            // The int value is bigger width than the types we are checking. Thus, manually check the limits of the type
+            // here to produce range errors in case the "catch" didn't get it.
+            rangeError = true;
+        }
+
+        if (!rangeError) {
+            valueAsType = intValue;  // range already checked, this is safe downcast
+        }
     }
 
     // First column is the base 10 version of the data
@@ -55,138 +89,12 @@ void IntType::fmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valu
     formattedCols.emplace_back(formattedData, formattedData.size());
 }
 
-// A note on the formatting:
-// std::stoi has the ability to read the negative sign, as well as 0x prefix to convert string hex intputs. The 3rd arg
-// is the "base". Special value of 0 means it will try to auto-detect. For example, if the input is 0x12 it will format
-// as base 16 (hex). If 012 it assumes octal etc. Otherwise it assume base 10.
-// What happens if the value is too large for the defined type, or other invalid values?
-// Exceptions:
-// std::invalid_argument if no conversion could be performed
-// std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
-// function sets errno to ERANGE.
-// The conversion functions: std::stoi, std::stol, std::stoll convert to an integer width that might be different from
-// the width we want.
-// For example, std::stoi creates a signed 32-bit integer as a result. But if our target type is int16_t, then we
-// cannot rely on the std::out_of_range exception to correctly catch range violations here.
-// Thus, we also add additional checks on the limits if the out_of_range didn't catch it.
-// Lastly, we provide 3 version:
-// stringToNumUsingInt
-// stringToNumUsingLongInt
-// stringToNumUsingLongLongInt
-// Caller must choose the correct version that uses a type that is large enough for the target type we are converting to
-// The caller function IntType::format(...) computes the widths and choose correct function to call.
-
-template <typename T>
-T IntType::stringToNumUsingInt(const std::string &value, bool &rangeError)
+template <typename I>
+I IntType::stringToNum(const std::string &value, bool &rangeError)
 {
-    T valueAsType = 0;
-    int intValue;
-    try {
-        intValue = std::stoi(value, nullptr, 0);
-    }
-    catch (std::invalid_argument const& ex)
-    {
-        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
-    }
-    catch(std::out_of_range const& ex)
-    {
-        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
-        rangeError = true;
-    }
-
-    if (isSigned_ && value.compare(0,2, "0x") == 0) {
-        // If the number was a hex input, we allow the user to produce a negative number if the hex input has
-        // the correct byte size for the type (and the number is in fact a negative number). For example:
-        // 0xfe is -2 for int8_t. But, 0x00fe is 254 for int16_t, even though 0xfe and 0x00fe is the same number
-        // numerically. Thus, if they provide leading zero's, assume its not negative.
-        if (value[2] != '0' && ((value.size() - 2) / 2) == sizeof(T)) {
-            // There was not a leading zero character, so this could be a negative number.
-            // The amount of characters precisely match the length of the type.
-            // example: 0x8000 is 4 characters, or "2 bytes of hex input" and the type is int16_t which is 2 bytes.
-            // At this point, since the character widths match, it is safe to lay down the number into its actual type.
-            // For example, since we used a 4-byte integer to do the format, we currently have this in memory for
-            // intValue: 0x00008000
-            // We can can then cast it down without losing anything:
-            valueAsType = intValue;
-            std::cout << "assigned the value: " << valueAsType << std::endl;
-            return valueAsType;
-        }
-    }
-
-    if (intValue < std::numeric_limits<T>::min() || intValue > std::numeric_limits<T>::max()) {
-        // The int value is bigger width than the types we are checking. Thus, manually check the limits of the type
-        // here to produce range errors in case the "catch" didn't get it.
-        rangeError = true;
-    }
-
-    if (!rangeError) {
-        valueAsType = intValue;  // range already checked, this is safe downcast
-    }
-
-    return valueAsType;
-}
-
-template <typename T>
-T IntType::stringToNumUsingLongInt(const std::string &value, bool &rangeError)
-{
-    T valueAsType = 0;
-    long int intValue;
-    try {
-        intValue = std::stol(value, nullptr, 0);
-    }
-    catch (std::invalid_argument const& ex)
-    {
-        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
-    }
-    catch(std::out_of_range const& ex)
-    {
-        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
-        rangeError = true;
-    }
-    
-    // The int value is bigger width than the types we are checking. Thus, manually check the limits of the type
-    // here to produce range errors in case the "catch" didn't get it.
-    if (intValue < std::numeric_limits<T>::min() || intValue > std::numeric_limits<T>::max()) {
-        rangeError = true;
-    }
-
-    if (!rangeError) {
-        valueAsType = intValue;  // range already checked, this is safe downcast
-    }
-
-    return valueAsType;
-}
-
-template <typename T>
-T IntType::stringToNumUsingLongLongInt(const std::string &value, bool &rangeError)
-{
-    T valueAsType = 0;
-    unsigned long long int intValue;
-    // There does not exist any formatter that converts directly to an 8-bit int, so we use the int version first and
-    // then assign it down if its in the valid range. We do this because we want to correctly show the range error
-    // if the data given exceeds the type width.
-    try {
-        intValue = std::stoull(value, nullptr, 0);
-    }
-    catch (std::invalid_argument const& ex)
-    {
-        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
-    }
-    catch(std::out_of_range const& ex)
-    {
-        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
-        rangeError = true;
-    }
-    
-    // The int value is bigger width than the types we are checking. Thus, manually check the limits of the type
-    // here to produce range errors in case the "catch" didn't get it.
-    if (intValue < std::numeric_limits<T>::min() || intValue > std::numeric_limits<T>::max()) {
-        rangeError = true;
-    }
-
-    if (!rangeError) {
-        valueAsType = intValue;  // range already checked, this is safe downcast
-    }
-
-    return valueAsType;
+    // I should change this to a compile time error using template skills
+    // basically, we only want to support the 3 known type which are each specialized.
+    std::string errMsg("Invalid numeric type conversion call. Current support for stoi, stol, and stoul");
+    errMsg += " (int, long int, and unsigned long long int respectively)";
+    THROW_FMT_EXCEPTION(errMsg);
 }

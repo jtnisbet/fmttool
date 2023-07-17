@@ -49,33 +49,33 @@ void IntType::format(std::vector<FmtColumn> &formattedCols, const std::string &v
     switch(width_) {
         case 8: {
             if (isSigned_) {
-                format<int8_t>(formattedCols, value);
+                format<int8_t, int>(formattedCols, value);
             } else {
-                format<uint8_t>(formattedCols, value);
+                format<uint8_t, int>(formattedCols, value);
             }
             break;
         }
         case 16: {
             if (isSigned_) {
-                format<int16_t>(formattedCols, value);
+                format<int16_t, int>(formattedCols, value);
             } else {
-                format<uint16_t>(formattedCols, value);
+                format<uint16_t, int>(formattedCols, value);
             }
             break;
         }
         case 32: {
             if (isSigned_) {
-                format<int32_t>(formattedCols, value);
+                format<int32_t, long int>(formattedCols, value);
             } else {
-                format<uint32_t>(formattedCols, value);
+                format<uint32_t, long int>(formattedCols, value);
             }
             break;
         }
         case 64: {
             if (isSigned_) {
-                format<int64_t>(formattedCols, value);
+                format<int64_t, unsigned long long int>(formattedCols, value);
             } else {
-                format<uint64_t>(formattedCols, value);
+                format<uint64_t, unsigned long long int>(formattedCols, value);
             }
             break;
         }
@@ -141,4 +141,61 @@ void IntType::fmtNumToHex<uint8_t>(std::vector<FmtType::FmtColumn> &formattedCol
     ss << std::hex << "0x" << std::setw(2) << std::setfill('0') << static_cast<uint32_t>(valueAsType);
     std::string formattedData = ss.str();
     formattedCols.emplace_back(formattedData, formattedData.size());
+}
+
+template <>
+int IntType::stringToNum<int>(const std::string &value, bool &rangeError)
+{
+    int intValue;
+    try {
+        intValue = std::stoi(value, nullptr, 0);
+    }
+    catch (std::invalid_argument const& ex)
+    {
+        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
+    }
+    catch(std::out_of_range const& ex)
+    {
+        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
+        rangeError = true;
+    }
+    return intValue;
+}
+
+template <>
+long int IntType::stringToNum<long int>(const std::string &value, bool &rangeError)
+{
+    long int intValue;
+    try {
+        intValue = std::stol(value, nullptr, 0);
+    }
+    catch (std::invalid_argument const& ex)
+    {
+        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
+    }
+    catch(std::out_of_range const& ex)
+    {
+        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
+        rangeError = true;
+    }
+    return intValue;
+}
+
+template <>
+unsigned long long int IntType::stringToNum<unsigned long long int>(const std::string &value, bool &rangeError)
+{
+    unsigned long long int intValue;
+    try {
+        intValue = std::stoull(value, nullptr, 0);
+    }
+    catch (std::invalid_argument const& ex)
+    {
+        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
+    }
+    catch(std::out_of_range const& ex)
+    {
+        // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
+        rangeError = true;
+    }
+    return intValue;
 }
