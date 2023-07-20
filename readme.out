@@ -16,8 +16,16 @@ so can we part both the | and the command args?
 --------
 things are going well.
 
-then after that, I guess work on the binary or ascii options?
-given a string of letters, show the hex bytes of the ascii chars
-given a hex input number, treat it as an array of chars and show the ascii
-   char string of that data.
+-a hello
 
+this means, format this string as if the characters are ascii characters.
+so, it will show the ascii code for h? e? etc? as hex bytes?
+
+-b 0x4546
+
+This means, format these bytes as if this is the binary representation in hex.
+
+-b 1234
+
+this is not a valid input.  I could read it as a number, then I already have
+number formatting.

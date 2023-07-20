@@ -6,13 +6,15 @@
 #include <typeinfo>
 #include <vector>
 
+class FmtTool;
+
 class FmtType {
 public:
     // For display data, the data is a string.  We need a size because the column can be a size that is different from
     // the size of the data itself for column alignment.
     using FmtColumn = std::pair<std::string, size_t>;
 
-    FmtType();
+    FmtType(FmtTool *parent);
     virtual ~FmtType() = default;
 
     // For use with std::set comparison and duplicate elimination
@@ -30,4 +32,5 @@ public:
                              std::vector<FmtType::FmtColumn> &underscoreRow) const = 0;
 protected:
     static const std::string OUT_OF_RANGE;
+    FmtTool *parentTool_;  // a back pointer to the main tool class.
 };

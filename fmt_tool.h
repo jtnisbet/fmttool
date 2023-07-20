@@ -24,7 +24,8 @@ public:
         UINT = 2,
         ASCII = 3,
         BINARY = 4,
-        HELP = 5
+        SUPP_BIN = 5,
+        HELP = 6
     };
 
     static const std::string DFT_ARGS;
@@ -35,6 +36,10 @@ public:
     void addTitles();
     void executeFormatting();
     void displayResultTable();
+    bool IsBinaryFmtSuppressed() {
+        return noBin_;
+    }
+
 private:
     using FmtColList = std::vector<FmtType::FmtColumn>;  // the columns
     using ResultTable = std::vector<FmtColList>;  // rows of columns
@@ -47,6 +52,7 @@ private:
     std::unique_ptr<std::istringstream> iSStream_;
     std::istream *inStream_;
     bool helpRequested_;
+    bool noBin_;
     ResultTable results_;
 };
 

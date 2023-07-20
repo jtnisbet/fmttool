@@ -11,10 +11,13 @@
 #include <vector>
 #include "fmt_exception.h"
 #include "fmt_type.h"
+#include "fmt_tool.h"
+
+//class FmtTool;
 
 class IntType : public FmtType {
 public:
-    IntType(size_t width, bool isSigned);
+    IntType(size_t width, bool isSigned, FmtTool *parent);
     ~IntType() = default;
     std::string toString() const override;
     void format(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value) override;

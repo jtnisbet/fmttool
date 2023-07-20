@@ -40,21 +40,10 @@ void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::
 
     // down cast the intermediate value to the target type.  This is only safe if its in the valid type range, and
     // also if we meed the conditions for hex input bit width.
-    std::cout << "intValue: " << intValue
-              << " limit min: " << std::numeric_limits<T>::min()
-              << " limit max: " << std::numeric_limits<T>::max() << std::endl;
     if ((isSigned_ && value.compare(0,2, "0x") == 0 && value[2] != '0' && ((value.size() - 2) / 2) == sizeof(T)) ||
         intValue >= std::numeric_limits<T>::min() && intValue <= std::numeric_limits<T>::max()) {
         valueAsType = intValue;
     } else {
-        if (intValue >= std::numeric_limits<T>::min()) {
-            std::cout << "got true for min check" << std::endl;
-        }
-
-        if (intValue <= std::numeric_limits<T>::max()) {
-            std::cout << "got true for max check" << std::endl;
-        }
-        
         rangeError = true;
     }
 
@@ -73,14 +62,16 @@ void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::
         fmtNumToHex<T>(formattedCols, valueAsType);
     }
 
-    // Third column is the binary representation of the number
-    if (rangeError) {
-        formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
-    } else {
-        // Quick way to see the binary is to convert to bitset and then display that.
-        std::bitset<sizeof(T) * 8> binValue(valueAsType);
-        std::string formattedData = binValue.to_string();
-        formattedCols.emplace_back(formattedData, formattedData.size());        
+    if (!parentTool_->IsBinaryFmtSuppressed()) {
+        // Third column is the binary representation of the number
+        if (rangeError) {
+            formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+        } else {
+            // Quick way to see the binary is to convert to bitset and then display that.
+            std::bitset<sizeof(T) * 8> binValue(valueAsType);
+            std::string formattedData = binValue.to_string();
+            formattedCols.emplace_back(formattedData, formattedData.size());        
+        }
     }
 }
 

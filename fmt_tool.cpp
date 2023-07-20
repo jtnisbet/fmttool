@@ -12,10 +12,11 @@ FmtTool::FmtTool() : iSStream_(nullptr), inStream_(nullptr), helpRequested_(fals
 {
     // Populate the formatting type map argument options.
     // This is done so that we may do switch during argument parsing of the input args
-    cmdArgMap_["-i"] = CmdArg::INT;
-    cmdArgMap_["-u"] = CmdArg::UINT;    
-    cmdArgMap_["-a"] = CmdArg::ASCII;
-    cmdArgMap_["-b"] = CmdArg::BINARY;
+    cmdArgMap_["-i"] = CmdArg::INT;            // Input is assumed to be a signed int data
+    cmdArgMap_["-u"] = CmdArg::UINT;           // Input is assumed to be an unsigned int data
+    cmdArgMap_["-a"] = CmdArg::ASCII;          // Input is assumed to be a string
+    cmdArgMap_["-b"] = CmdArg::BINARY;         // Input is assume to be an array of bytes in hex (prefixed with 0x..)
+    cmdArgMap_["-nobin"] = CmdArg::SUPP_BIN;  // Supress binary ouput for integer types
     cmdArgMap_["-h"] = CmdArg::HELP;
 }
 
@@ -45,8 +46,14 @@ void FmtTool::parseArgs(std::stringstream *argStream)
                 }
                 bool isSigned = (currArg == CmdArg::INT) ? true : false;
                 // base class pointer of derived class type
-                newType = std::make_unique<IntType>(typeWidth, isSigned);
+                newType = std::make_unique<IntType>(typeWidth, isSigned, this);
                 fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
+                break;
+            }
+            // -nobin option suppresses the binary output column display for integer types (because it can be long and
+            // maybe the user doesn't want it)
+            case (CmdArg::SUPP_BIN): {
+                noBin_ = true;
                 break;
             }
             // -h for help. Does not have any args.
@@ -66,7 +73,7 @@ void FmtTool::parseArgs(std::stringstream *argStream)
     // If there were no args given for type format requests (only user values), then assign a dft formatting config.
     if (fmtTypes_.empty()) {
         // For consistency, this should match the DFT_ARGS variable options
-        newType = std::make_unique<IntType>(32, true);  // base class pointer of derived class type
+        newType = std::make_unique<IntType>(32, true, this);  // base class pointer of derived class type
         fmtTypes_.insert(std::move(newType));     // std::set eliminates duplicates
     }
 

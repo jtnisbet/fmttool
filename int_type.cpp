@@ -6,9 +6,10 @@
 #include <string>
 #include "fmt_exception.h"
 #include "fmt_type.h"
+#include "fmt_tool.h"
 
 // IntType methods
-IntType::IntType(size_t width, bool isSigned) : FmtType(), width_(width), isSigned_(isSigned)
+IntType::IntType(size_t width, bool isSigned, FmtTool *parent) : FmtType(parent), width_(width), isSigned_(isSigned)
 {
     if (width_ != 8 && width != 16 && width_ != 32 && width_ != 64) {
         THROW_FMT_EXCEPTION("Invalid width value for integer format (-i <width>). Must be 8, 16, 32, or 64.");
@@ -104,10 +105,12 @@ void IntType::getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vecto
     titleRow1.emplace_back(BASE_16, BASE_16.size());
     titleRow2.emplace_back(widthName, widthName.size());
     underscoreRow.emplace_back("", BASE_16.size());
-
-    titleRow1.emplace_back(BASE_2, BASE_2.size());
-    titleRow2.emplace_back(widthName, widthName.size());
-    underscoreRow.emplace_back("", BASE_2.size());
+    if (!parentTool_->IsBinaryFmtSuppressed()) {
+        // display binary formatting column if it has not been univesally suppressed via flag
+        titleRow1.emplace_back(BASE_2, BASE_2.size());
+        titleRow2.emplace_back(widthName, widthName.size());
+        underscoreRow.emplace_back("", BASE_2.size());
+    }
 
 }
 
@@ -159,7 +162,7 @@ int IntType::stringToNum<int>(const std::string &value, bool &rangeError)
     }
     catch (std::invalid_argument const& ex)
     {
-        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
+        THROW_FMT_EXCEPTION("Invalid data for integer type formatting: " + value);
     }
     catch(std::out_of_range const& ex)
     {
@@ -178,7 +181,7 @@ long int IntType::stringToNum<long int>(const std::string &value, bool &rangeErr
     }
     catch (std::invalid_argument const& ex)
     {
-        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
+        THROW_FMT_EXCEPTION("Invalid data for integer type formatting: " + value);
     }
     catch(std::out_of_range const& ex)
     {
@@ -197,7 +200,7 @@ long long int IntType::stringToNum<long long int>(const std::string &value, bool
     }
     catch (std::invalid_argument const& ex)
     {
-        THROW_FMT_EXCEPTION("Invalid data for formatting: " + value);
+        THROW_FMT_EXCEPTION("Invalid data for integer type formatting: " + value);
     }
     catch(std::out_of_range const& ex)
     {
