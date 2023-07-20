@@ -15,16 +15,9 @@ so can we part both the | and the command args?
 
 --------
 things are going well.
-doing the hex input for negatives as the moment.
-fixed the 4 byte version...need to update the others I think.
 
 then after that, I guess work on the binary or ascii options?
 given a string of letters, show the hex bytes of the ascii chars
 given a hex input number, treat it as an array of chars and show the ascii
    char string of that data.
 
-going back to some code cleanup first.
-done..but want to clean up.
-make a compile time check instead of runtime for bad type support.
-also rework that if statement etc.
-double check all types are correct.  add testcases for these negatives for hex etc.

@@ -73,9 +73,9 @@ void IntType::format(std::vector<FmtColumn> &formattedCols, const std::string &v
         }
         case 64: {
             if (isSigned_) {
-                format<int64_t, unsigned long long int>(formattedCols, value);
+                format<int64_t, long long int>(formattedCols, value);
             } else {
-                format<uint64_t, unsigned long long int>(formattedCols, value);
+                format<uint64_t, long long int>(formattedCols, value);
             }
             break;
         }
@@ -92,6 +92,7 @@ void IntType::getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vecto
 {
     const std::string BASE_10 = "Base 10";
     const std::string BASE_16 = "Hex";
+    const std::string BASE_2 = "Bin";
     std::string widthName = this->toString();
     
     // This type provides 2 columns: decimal formatted and hex formatted.
@@ -99,20 +100,16 @@ void IntType::getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vecto
     titleRow1.emplace_back(BASE_10, BASE_10.size());
     titleRow2.emplace_back(widthName, widthName.size());
     underscoreRow.emplace_back("", BASE_10.size());
+
     titleRow1.emplace_back(BASE_16, BASE_16.size());
     titleRow2.emplace_back(widthName, widthName.size());
     underscoreRow.emplace_back("", BASE_16.size());
-}
 
-// A note on the formatting:
-// std::stoi has the ability to read the negative sign, as well as 0x prefix to convert string hex intputs. The 3rd arg
-// is the "base". Special value of 0 means it will try to auto-detect. For example, if the input is 0x12 it will format
-// as base 16 (hex). If 012 it assumes octal etc. Otherwise it assume base 10.
-// What happens if the value is too large for the defined type, or other invalid values?
-// Exceptions:
-// std::invalid_argument if no conversion could be performed
-// std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
-// function sets errno to ERANGE.
+    titleRow1.emplace_back(BASE_2, BASE_2.size());
+    titleRow2.emplace_back(widthName, widthName.size());
+    underscoreRow.emplace_back("", BASE_2.size());
+
+}
 
 // specialization for int8_t. The general method for converting to hex doesnt' work for this one.
 // cast the single byte to int32_t first.
@@ -142,6 +139,16 @@ void IntType::fmtNumToHex<uint8_t>(std::vector<FmtType::FmtColumn> &formattedCol
     std::string formattedData = ss.str();
     formattedCols.emplace_back(formattedData, formattedData.size());
 }
+
+// A note on the formatting:
+// std::stoi has the ability to read the negative sign, as well as 0x prefix to convert string hex intputs. The 3rd arg
+// is the "base". Special value of 0 means it will try to auto-detect. For example, if the input is 0x12 it will format
+// as base 16 (hex). If 012 it assumes octal etc. Otherwise it assume base 10.
+// What happens if the value is too large for the defined type, or other invalid values?
+// Exceptions:
+// std::invalid_argument if no conversion could be performed
+// std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
+// function sets errno to ERANGE.
 
 template <>
 int IntType::stringToNum<int>(const std::string &value, bool &rangeError)
@@ -182,11 +189,11 @@ long int IntType::stringToNum<long int>(const std::string &value, bool &rangeErr
 }
 
 template <>
-unsigned long long int IntType::stringToNum<unsigned long long int>(const std::string &value, bool &rangeError)
+long long int IntType::stringToNum<long long int>(const std::string &value, bool &rangeError)
 {
-    unsigned long long int intValue;
+    long long int intValue;
     try {
-        intValue = std::stoull(value, nullptr, 0);
+        intValue = std::stoll(value, nullptr, 0);
     }
     catch (std::invalid_argument const& ex)
     {

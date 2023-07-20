@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
@@ -24,11 +25,11 @@ public:
     void getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vector<FmtType::FmtColumn> &titleRow2,
                      std::vector<FmtType::FmtColumn> &underscoreRow) const override;
 private:
-    // Convert to the target number type by calling appropriate sto* function.
-    // Only supports int, long int, and unsigned long long int.
-    // All other types are not allowed.
+    // Convert to the target number type by calling appropriate std::sto* function.
+    // Only supports int, long int, and long long int.
+    // All other types are not allowed, therefore we mark the generic non-specialized version as deleted.
     template <typename I>
-    I stringToNum(const std::string &value, bool &rangeError);
+    I stringToNum(const std::string &value, bool &rangeError) = delete;
 
     template <typename T>
     void fmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valueAsType);

@@ -2,14 +2,6 @@
 // Put in this file to separate implementation from the class
 
 // A note on the formatting:
-// std::stoi has the ability to read the negative sign, as well as 0x prefix to convert string hex intputs. The 3rd arg
-// is the "base". Special value of 0 means it will try to auto-detect. For example, if the input is 0x12 it will format
-// as base 16 (hex). If 012 it assumes octal etc. Otherwise it assume base 10.
-// What happens if the value is too large for the defined type, or other invalid values?
-// Exceptions:
-// std::invalid_argument if no conversion could be performed
-// std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
-// function sets errno to ERANGE.
 // The conversion functions: std::stoi, std::stol, std::stoull convert to an integer width that might be different from
 // the width we want.
 // For example, std::stoi creates a signed 32-bit integer as a result. But if our target type is int16_t, then we
@@ -18,6 +10,10 @@
 // Caller must choose the correct version that uses a type that is large enough for the target type we are converting to
 // The caller function IntType::format(...) computes the widths and choose correct function to call, using the second
 // template arg to decide which std::sto* function to call.
+// Example: format<int16_t, int>(..) will create a target type of int32_t, and it will use stoi function that returns
+// "int" datatype as an intermediate value.
+// Thus, after capturing the number into the intermediate type, it must do range checking before finalizing the value
+// to the real target type.
 //
 // Rules for negative numbers when user provides hex input:
 // If the number was a hex input, we allow the user to produce a negative number if the hex input has the correct byte
@@ -42,20 +38,24 @@ void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::
     // This is not the final number, just the result of the atoi call representated as the type from the atoi call.
     I intValue = stringToNum<I>(value, rangeError);
 
-    // clean this up later.  the if statements can be reworked I think...notice the duplicate value as type and
-    // funny range error check things
-    if (isSigned_ && value.compare(0,2, "0x") == 0 && value[2] != '0' && ((value.size() - 2) / 2) == sizeof(T)) {
+    // down cast the intermediate value to the target type.  This is only safe if its in the valid type range, and
+    // also if we meed the conditions for hex input bit width.
+    std::cout << "intValue: " << intValue
+              << " limit min: " << std::numeric_limits<T>::min()
+              << " limit max: " << std::numeric_limits<T>::max() << std::endl;
+    if ((isSigned_ && value.compare(0,2, "0x") == 0 && value[2] != '0' && ((value.size() - 2) / 2) == sizeof(T)) ||
+        intValue >= std::numeric_limits<T>::min() && intValue <= std::numeric_limits<T>::max()) {
         valueAsType = intValue;
     } else {
-        if (intValue < std::numeric_limits<T>::min() || intValue > std::numeric_limits<T>::max()) {
-            // The int value is bigger width than the types we are checking. Thus, manually check the limits of the type
-            // here to produce range errors in case the "catch" didn't get it.
-            rangeError = true;
+        if (intValue >= std::numeric_limits<T>::min()) {
+            std::cout << "got true for min check" << std::endl;
         }
 
-        if (!rangeError) {
-            valueAsType = intValue;  // range already checked, this is safe downcast
+        if (intValue <= std::numeric_limits<T>::max()) {
+            std::cout << "got true for max check" << std::endl;
         }
+        
+        rangeError = true;
     }
 
     // First column is the base 10 version of the data
@@ -71,7 +71,17 @@ void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::
         formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
     } else {
         fmtNumToHex<T>(formattedCols, valueAsType);
-    }   
+    }
+
+    // Third column is the binary representation of the number
+    if (rangeError) {
+        formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+    } else {
+        // Quick way to see the binary is to convert to bitset and then display that.
+        std::bitset<sizeof(T) * 8> binValue(valueAsType);
+        std::string formattedData = binValue.to_string();
+        formattedCols.emplace_back(formattedData, formattedData.size());        
+    }
 }
 
 template <typename T>
@@ -87,14 +97,4 @@ void IntType::fmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valu
     ss << "0x" << std::hex << std::setw(sizeof(T)*2) << std::setfill('0') << valueAsType;
     std::string formattedData = ss.str();
     formattedCols.emplace_back(formattedData, formattedData.size());
-}
-
-template <typename I>
-I IntType::stringToNum(const std::string &value, bool &rangeError)
-{
-    // I should change this to a compile time error using template skills
-    // basically, we only want to support the 3 known type which are each specialized.
-    std::string errMsg("Invalid numeric type conversion call. Current support for stoi, stol, and stoul");
-    errMsg += " (int, long int, and unsigned long long int respectively)";
-    THROW_FMT_EXCEPTION(errMsg);
 }
