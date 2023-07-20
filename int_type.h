@@ -28,6 +28,8 @@ public:
     void getTitleRow(std::vector<FmtType::FmtColumn> &titleRow1, std::vector<FmtType::FmtColumn> &titleRow2,
                      std::vector<FmtType::FmtColumn> &underscoreRow) const override;
 private:
+    enum class ErrType : uint8_t {FmtErrNone = 0, FmtErrRange = 1, FmtErrInvalid = 2};
+
     // Convert to the target number type by calling appropriate std::sto* function.
     // Only supports int, long int, and long long int.
     // All other types are not allowed, therefore we mark the generic non-specialized version as deleted.

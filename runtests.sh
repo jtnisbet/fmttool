@@ -13,6 +13,9 @@
 # i.e. -0xfe.  That doesn't follow the idea of supporting the internal storage of the number.
 # Right now I don't check for this, but it will probably try to format this as -254
 
+echo "Test elim duplicate format types"
+./fmttool -i 8 -i 8 99
+echo
 echo "Test signed 8 bit int"
 ./fmttool -i 8 -129 -128 127 128 0x80 0x7f 0xfe 0x00fe
 echo

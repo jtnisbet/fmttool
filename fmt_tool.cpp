@@ -1,6 +1,7 @@
 #include "fmt_tool.h"
 #include <iomanip>
 #include <memory>
+#include "ascii_type.h"
 #include "fmt_type.h"
 #include "fmt_exception.h"
 #include "int_type.h"
@@ -50,6 +51,11 @@ void FmtTool::parseArgs(std::stringstream *argStream)
                 fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
                 break;
             }
+            case (CmdArg::ASCII): {
+                newType = std::make_unique<AsciiType>(this);
+                fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
+                break;
+            }            
             // -nobin option suppresses the binary output column display for integer types (because it can be long and
             // maybe the user doesn't want it)
             case (CmdArg::SUPP_BIN): {
@@ -71,6 +77,7 @@ void FmtTool::parseArgs(std::stringstream *argStream)
     }
 
     // If there were no args given for type format requests (only user values), then assign a dft formatting config.
+    // User will get failures though if the data isn't the default here (say its ascii or something)
     if (fmtTypes_.empty()) {
         // For consistency, this should match the DFT_ARGS variable options
         newType = std::make_unique<IntType>(32, true, this);  // base class pointer of derived class type
