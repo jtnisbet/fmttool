@@ -10,7 +10,7 @@
 // Caller must choose the correct version that uses a type that is large enough for the target type we are converting to
 // The caller function IntType::format(...) computes the widths and choose correct function to call, using the second
 // template arg to decide which std::sto* function to call.
-// Example: format<int16_t, int>(..) will create a target type of int32_t, and it will use stoi function that returns
+// Example: format<int16_t, int>(..) will create a target type of int16_t, and it will use stoi function that returns
 // "int" datatype as an intermediate value.
 // Thus, after capturing the number into the intermediate type, it must do range checking before finalizing the value
 // to the real target type.
