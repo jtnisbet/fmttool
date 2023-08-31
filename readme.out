@@ -14,12 +14,7 @@ can you do: echo "45" | fmttool -i 32
 so can we part both the | and the command args?
 
 --------
-things are going well.
-
--a hello
-
-this means, format this string as if the characters are ascii characters.
-so, it will show the ascii code for h? e? etc? as hex bytes?
+...still some problem with integer types.  My uint64_t method is not working.
 
 -b 0x4546
 

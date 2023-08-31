@@ -32,5 +32,6 @@ public:
                              std::vector<FmtType::FmtColumn> &underscoreRow) const = 0;
 protected:
     static const std::string OUT_OF_RANGE;
+    static const std::string INVALID;
     FmtTool *parentTool_;  // a back pointer to the main tool class.
 };

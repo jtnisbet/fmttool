@@ -154,7 +154,7 @@ void IntType::fmtNumToHex<uint8_t>(std::vector<FmtType::FmtColumn> &formattedCol
 // function sets errno to ERANGE.
 
 template <>
-int IntType::stringToNum<int>(const std::string &value, bool &rangeError)
+int IntType::stringToNum<int>(const std::string &value, ErrType &err)
 {
     int intValue;
     try {
@@ -162,18 +162,18 @@ int IntType::stringToNum<int>(const std::string &value, bool &rangeError)
     }
     catch (std::invalid_argument const& ex)
     {
-        THROW_FMT_EXCEPTION("Invalid data for integer type formatting: " + value);
+        err = ErrType::FmtErrInvalid;
     }
     catch(std::out_of_range const& ex)
     {
         // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
-        rangeError = true;
+        err = ErrType::FmtErrRange;
     }
     return intValue;
 }
 
 template <>
-long int IntType::stringToNum<long int>(const std::string &value, bool &rangeError)
+long int IntType::stringToNum<long int>(const std::string &value, ErrType &err)
 {
     long int intValue;
     try {
@@ -181,18 +181,18 @@ long int IntType::stringToNum<long int>(const std::string &value, bool &rangeErr
     }
     catch (std::invalid_argument const& ex)
     {
-        THROW_FMT_EXCEPTION("Invalid data for integer type formatting: " + value);
+        err = ErrType::FmtErrInvalid;
     }
     catch(std::out_of_range const& ex)
     {
         // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
-        rangeError = true;
+        err = ErrType::FmtErrRange;
     }
     return intValue;
 }
 
 template <>
-long long int IntType::stringToNum<long long int>(const std::string &value, bool &rangeError)
+long long int IntType::stringToNum<long long int>(const std::string &value, ErrType &err)
 {
     long long int intValue;
     try {
@@ -200,12 +200,12 @@ long long int IntType::stringToNum<long long int>(const std::string &value, bool
     }
     catch (std::invalid_argument const& ex)
     {
-        THROW_FMT_EXCEPTION("Invalid data for integer type formatting: " + value);
+        err = ErrType::FmtErrInvalid;
     }
     catch(std::out_of_range const& ex)
     {
         // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
-        rangeError = true;
+        err = ErrType::FmtErrRange;
     }
     return intValue;
 }

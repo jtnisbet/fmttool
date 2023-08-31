@@ -34,7 +34,7 @@ private:
     // Only supports int, long int, and long long int.
     // All other types are not allowed, therefore we mark the generic non-specialized version as deleted.
     template <typename I>
-    I stringToNum(const std::string &value, bool &rangeError) = delete;
+    I stringToNum(const std::string &value, ErrType &err) = delete;
 
     template <typename T>
     void fmtNumToHex(std::vector<FmtType::FmtColumn> &formattedCols, T valueAsType);

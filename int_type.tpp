@@ -24,7 +24,7 @@
 template <typename T, typename I>
 void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::string &value)
 {
-    bool rangeError = false;
+    ErrType err = ErrType::FmtErrNone;
     T valueAsType = 0;
 
     if (std::numeric_limits<T>::digits > std::numeric_limits<I>::digits) {
@@ -36,36 +36,44 @@ void IntType::format(std::vector<FmtType::FmtColumn> &formattedCols, const std::
 
     // call the atoi wrapper using the type size specification template arg.
     // This is not the final number, just the result of the atoi call representated as the type from the atoi call.
-    I intValue = stringToNum<I>(value, rangeError);
+    I intValue = stringToNum<I>(value, err);
 
     // down cast the intermediate value to the target type.  This is only safe if its in the valid type range, and
-    // also if we meed the conditions for hex input bit width.
-    if ((isSigned_ && value.compare(0,2, "0x") == 0 && value[2] != '0' && ((value.size() - 2) / 2) == sizeof(T)) ||
-        intValue >= std::numeric_limits<T>::min() && intValue <= std::numeric_limits<T>::max()) {
-        valueAsType = intValue;
-    } else {
-        rangeError = true;
+    // also if we meet the conditions for hex input bit width.
+    if (err == ErrType::FmtErrNone) {
+        if ((isSigned_ && value.compare(0,2, "0x") == 0 && value[2] != '0' && ((value.size() - 2) / 2) == sizeof(T)) ||
+            intValue >= std::numeric_limits<T>::min() && intValue <= std::numeric_limits<T>::max()) {
+            valueAsType = intValue;
+        } else {
+            err = ErrType::FmtErrRange;
+        }
     }
 
     // First column is the base 10 version of the data
-    if (rangeError) {
+    if (err == ErrType::FmtErrRange) {
         formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+    } else if (err == ErrType::FmtErrInvalid) {
+        formattedCols.emplace_back(INVALID, INVALID.size());
     } else {
         std::string formattedData = std::to_string(valueAsType);
         formattedCols.emplace_back(formattedData, formattedData.size());
     }
 
     // The next column will be the hex format of the number. Ensure leading zeros match the bitwidth.
-    if (rangeError) {
+    if (err == ErrType::FmtErrRange) {
         formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+    } else if (err == ErrType::FmtErrInvalid) {
+        formattedCols.emplace_back(INVALID, INVALID.size());
     } else {
         fmtNumToHex<T>(formattedCols, valueAsType);
     }
 
     if (!parentTool_->IsBinaryFmtSuppressed()) {
         // Third column is the binary representation of the number
-        if (rangeError) {
+        if (err == ErrType::FmtErrRange) {
             formattedCols.emplace_back(OUT_OF_RANGE, OUT_OF_RANGE.size());
+        } else if (err == ErrType::FmtErrInvalid) {
+            formattedCols.emplace_back(INVALID, INVALID.size());    
         } else {
             // Quick way to see the binary is to convert to bitset and then display that.
             std::bitset<sizeof(T) * 8> binValue(valueAsType);
