@@ -24,3 +24,5 @@ This means, format these bytes as if this is the binary representation in hex.
 
 this is not a valid input.  I could read it as a number, then I already have
 number formatting.
+
+whats the plan for ascii type?  did I finish that part yet?

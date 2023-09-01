@@ -76,7 +76,7 @@ void IntType::format(std::vector<FmtColumn> &formattedCols, const std::string &v
             if (isSigned_) {
                 format<int64_t, long long int>(formattedCols, value);
             } else {
-                format<uint64_t, long long int>(formattedCols, value);
+                format<uint64_t, unsigned long long int>(formattedCols, value);
             }
             break;
         }
@@ -152,6 +152,12 @@ void IntType::fmtNumToHex<uint8_t>(std::vector<FmtType::FmtColumn> &formattedCol
 // std::invalid_argument if no conversion could be performed
 // std::out_of_range if the converted value would fall out of the range of the result type or if the underlying
 // function sets errno to ERANGE.
+// Lastly, in most cases we'll use the non-unsigned versions of the call, but will ensure to use a larger bitwidth of
+// the std::sto* functions.  For example, for 8, 16 bit, we can use the 32-bit std::stoi.  For 32, we'll use long int.
+// The only challenge is the uint64_t conversion.  There is not larger type.  We can safely use std::stoll for the
+// int64_t, but for uin64_t we need one more bit. This requries std::stoull function.  However, this function deploys
+// integer wrapping. -1 does not yield out of range error naturally.  it just wraps it to the max postive value.
+// Thus, manual detection of negative will be added for that case.
 
 template <>
 int IntType::stringToNum<int>(const std::string &value, ErrType &err)
@@ -197,6 +203,57 @@ long long int IntType::stringToNum<long long int>(const std::string &value, ErrT
     long long int intValue;
     try {
         intValue = std::stoll(value, nullptr, 0);
+    }
+    catch (std::invalid_argument const& ex)
+    {
+        err = ErrType::FmtErrInvalid;
+    }
+    catch(std::out_of_range const& ex)
+    {
+        // Special case for a hex number
+        // When you read in a hex number, it treats the number as the numerical value itself, not the internal bit
+        // representation of it.
+        // For example, the number 0x8000000000000000 will be assumed to be huge positive number that is too big for the
+        // 64-bit in type, so it gives out of range exeception.
+        // The problem with this is that this same hex number IS a valid number for 64-bit int. Its the number
+        // -9223372036854775808 which is in range.
+        // We can use stoull though.  This will allow it, and then cast the number into its signed type.
+        // I didn't bother to implmenet this logic for the other signed type conversions because there was always a
+        // "bigger bitwidth" that we could use. no such luck for 64-bit dudes.  There isn't a 128 bit numeric native
+        // type.
+        if (value.compare(0,2, "0x") == 0) {
+            try {
+                unsigned long long int tempValue;
+                tempValue = std::stoull(value, nullptr, 0);
+                intValue = tempValue;  // purposely down cast.  will change the value to correct negative value
+            }
+            catch (std::invalid_argument const& ex)
+            {
+                err = ErrType::FmtErrInvalid;
+            }
+            catch(std::out_of_range const& ex)
+            {
+                err = ErrType::FmtErrRange;
+            }
+        } else {
+            // Don't throw an exception if we are out of range. Instead, we'll print a message in the formatted output.
+            err = ErrType::FmtErrRange;
+        }
+    }
+    return intValue;
+}
+
+template <>
+unsigned long long int IntType::stringToNum<unsigned long long int>(const std::string &value, ErrType &err)
+{
+    long long int intValue;
+    // Manual detection of a negative input. Treat this as out of range rather than format the overlap.
+    if (value[0] == '-') {
+        err = ErrType::FmtErrRange;
+        return 0;
+    }
+    try {
+        intValue = std::stoull(value, nullptr, 0);
     }
     catch (std::invalid_argument const& ex)
     {
