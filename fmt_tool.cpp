@@ -154,11 +154,31 @@ void FmtTool::executeFormatting()
     // We have a list of values coming from our chosen input stream (it may be a istringtream or it might be std::cin).
     // For each value, execute the requested formatting against that value.
     bool moreData = true;
+    bool enclosedData = false;
     std::string currValue;
+    std::string compoundString;
     addTitles();
     while (moreData) {
         if (*inStream_ >> currValue) {
-            addToResultTable(currValue);  // formats the value into the result table
+            if (!enclosedData) {
+                if (currValue[0] == '\2') {
+                    // An enclosed string.  Strip the STX character and start creating our compound string.
+                    enclosedData = true;
+                    compoundString = currValue.substr(1, currValue.size() - 1);
+                } else {
+                    // Normal case, we are not in an enclused string and its just a new single token of data.
+                    addToResultTable(currValue);  // formats the value into the result table
+                }
+            } else {
+                // We are already in enclosed data string. if the token does not end in the ETX, append it.
+                // It the token ends in ETX, append it without the ETX, and then drive the format work.
+                if (currValue[currValue.size() - 1] == '\3') {
+                    compoundString += " " + currValue.substr(0, currValue.size() - 1);
+                    addToResultTable(compoundString);
+                } else {
+                    compoundString += " " + currValue;
+                }
+            }
         } else if (inStream_->eof()) {
             // normal exit case.  We reached the end of the stream, or pipe/stream ended
             moreData = false;

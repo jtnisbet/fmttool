@@ -39,3 +39,9 @@ echo
 echo "Test unsigned 64 bit int"
 ./fmttool -u 64 -1 0 18446744073709551615 18446744073709551616 0x8000000000000000
 echo
+echo "Test ascii input. quoted strings and also escape sequence"
+./fmttool -a hello goodbye "hello good\"bye\""
+echo
+echo "Test binary input format to ascii"
+./fmttool -b 0x68656c6c6f20676f6f64627965
+echo
