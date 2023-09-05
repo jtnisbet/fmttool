@@ -14,15 +14,67 @@ can you do: echo "45" | fmttool -i 32
 so can we part both the | and the command args?
 
 --------
-...still some problem with integer types.  My uint64_t method is not working.
+./fmttool -a "this is a string"
+                   Hex
+ input           ascii
+------  --------------
+  this      0x74686973
+    is          0x6973
+     a            0x61
+string  0x737472696e67
 
--b 0x4546
+./fmttool -a this is a string
+                   Hex
+ input           ascii
+------  --------------
+  this      0x74686973
+    is          0x6973
+     a            0x61
+string  0x737472696e67
 
-This means, format these bytes as if this is the binary representation in hex.
+for ascii mode, I want to be able to contain white spaces if you use quotes.
 
--b 1234
+my commnad line parsing is not using shell functions here.
+I need to provide support for quoted inputs.
+----------
 
-this is not a valid input.  I could read it as a number, then I already have
-number formatting.
 
-whats the plan for ascii type?  did I finish that part yet?
+./fmttool -a "this is a string"
+debug. the arg stream as a string is:  -a this is a string
+                   Hex
+ input           ascii
+------  --------------
+  this      0x74686973
+    is          0x6973
+     a            0x61
+string  0x737472696e67
+
+
+    std::cout << "debug. the arg stream as a string is: " << argStream->str() << std::endl;
+    while (*argStream >> tok) {
+
+
+its because of this.
+if (argc > 1) {
+    for (int i = 1; i < argc; ++i) {
+        args << " " << std::string(argv[i]);
+    }
+
+--------------
+
+./fmttool -a "this is a string"
+debug.  the arg is: -a
+debug.  the arg is: this is a string
+debug. the arg stream as a string is:  -a this is a string
+
+
+so what is happening is that the shell is correctly giving me the string that contains
+spaces in it as the arg. but I'm screwing it up by re-appending it as a flat string
+and using spaces as my delimiter.
+
+so, what if I:
+- check if the string has any spaces in it.  if it does, then wrap the overall string
+back into quotes when stream'ifying it.then, when  tokenize it, I have special case that
+reads the quote character.  if it reads the quote, the token will find the other quote and build
+that string (including the quotes)
+

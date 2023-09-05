@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <memory>
 #include "ascii_type.h"
+#include "binary_type.h"
 #include "fmt_type.h"
 #include "fmt_exception.h"
 #include "int_type.h"
@@ -13,10 +14,10 @@ FmtTool::FmtTool() : iSStream_(nullptr), inStream_(nullptr), helpRequested_(fals
 {
     // Populate the formatting type map argument options.
     // This is done so that we may do switch during argument parsing of the input args
-    cmdArgMap_["-i"] = CmdArg::INT;            // Input is assumed to be a signed int data
-    cmdArgMap_["-u"] = CmdArg::UINT;           // Input is assumed to be an unsigned int data
-    cmdArgMap_["-a"] = CmdArg::ASCII;          // Input is assumed to be a string
-    cmdArgMap_["-b"] = CmdArg::BINARY;         // Input is assume to be an array of bytes in hex (prefixed with 0x..)
+    cmdArgMap_["-i"] = CmdArg::INT;           // Input is assumed to be a signed int data
+    cmdArgMap_["-u"] = CmdArg::UINT;          // Input is assumed to be an unsigned int data
+    cmdArgMap_["-a"] = CmdArg::ASCII;         // Input is assumed to be a string
+    cmdArgMap_["-b"] = CmdArg::BINARY;        // Input is assume to be an array of bytes in hex (prefixed with 0x..)
     cmdArgMap_["-nobin"] = CmdArg::SUPP_BIN;  // Supress binary ouput for integer types
     cmdArgMap_["-h"] = CmdArg::HELP;
 }
@@ -55,7 +56,12 @@ void FmtTool::parseArgs(std::stringstream *argStream)
                 newType = std::make_unique<AsciiType>(this);
                 fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
                 break;
-            }            
+            }
+            case (CmdArg::BINARY): {
+                newType = std::make_unique<BinaryType>(this);
+                fmtTypes_.insert(std::move(newType));  // std::set eliminates duplicates
+                break;
+            }
             // -nobin option suppresses the binary output column display for integer types (because it can be long and
             // maybe the user doesn't want it)
             case (CmdArg::SUPP_BIN): {
