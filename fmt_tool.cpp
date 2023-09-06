@@ -110,15 +110,35 @@ bool FmtTool::showHelp()
     // If ANY of the arguments was the help arg then we ignore all args and just show the help
     // Complete this later once I know more about how I'm doing this.
     if (helpRequested_) {
-        std::cout << "Description:\nfmttool formats input data into different output formats specified by the options.\n";
-        std::cout << "Multiple options can be provided.\n";
-        std::cout << "\nUsage: fmttool [ <options> ]\n";
-        std::cout << "\nOptions:\n    [ -i <width> ]: Format the data as an integer type at the given bit width\n";
-        std::cout << "\n    [ <value> ]: User provided data value to format.\n";
-        std::cout << "\n    [ -h ]: Shows this help text.\n";
-        std::cout << "\nExample: Format the numbers 12 and 78 as a 16-bit integer and a 64-bit integer:\n";
-        std::cout << "fmttool -i 16 -i 64 12 78\n";
-        std::cout << std::endl;
+        std::cout << "Description:\nfmttool formats input data into different output formats specified by the options.\n"
+                  << "Multiple options and input data can be provided.\n"
+                  << "Supports piped input data (See examples)\n"
+                  << "\nUsage: fmttool [ <options> ... ] [ user_data ... ]\n"
+                  << "\noptions:\n"
+                  << "    -i width\n"
+                  << "       Format the data as a signed integer type at the given bit width.\n"
+                  << "       (Supported bit-widths: 8,16,32,64)\n"
+                  << "    -u width\n"
+                  << "       Format the data as an unsigned integer type at the given bit width\n"
+                  << "       (Supported bit-widths: 8,16,32,64)\n"
+                  << "    -a\n"
+                  << "       Format the data as input ascii characters, showing their hexadecimal values for each character.\n"
+                  << "       Assumes single byte ascii characters. UTF8 or graphic/multi-byte characters not suppored.\n"
+                  << "       From the shell, enclose bigger strings in \" characters if there are whitespace characters in the data.\n"
+                  << "    -b\n"
+                  << "       Formats the data into ascii characters. Input must be in the format of hexademical data prefixed with 0x\n"
+                  << "       Input data must contain even number of charactes so that bytes are well-formed (nibbles are not suppported).\n"
+                  << "       Correct example: 0x51    Invalid example: 0x4\n"
+                  << "    -h\n"
+                  << "       Shows this help text.\n"
+                  << "\nuser_data\n"
+                  << "    Any data can be input.\n"
+                  << "\nExamples:\n"
+                  << "    Format the numbers 12 and 78 as 16-bit signed integer and 64-bit unsigned integer:\n"
+                  << "       fmttool -i 16 -u 64 12 78\n"
+                  << "    Format the strings \hello\" and \"world\" individually, given as input from a pipe in ascii mode\n"
+                  << "       echo \"hello world\" | fmttool -a\n"
+                  << std::endl;
     }
     return helpRequested_;
 }
