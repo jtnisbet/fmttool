@@ -136,7 +136,7 @@ bool FmtTool::showHelp()
                   << "\nExamples:\n"
                   << "    Format the numbers 12 and 78 as 16-bit signed integer and 64-bit unsigned integer:\n"
                   << "       fmttool -i 16 -u 64 12 78\n"
-                  << "    Format the strings \hello\" and \"world\" individually, given as input from a pipe in ascii mode\n"
+                  << "    Format the strings \"hello\" and \"world\" individually, given as input from a pipe in ascii mode\n"
                   << "       echo \"hello world\" | fmttool -a\n"
                   << std::endl;
     }
