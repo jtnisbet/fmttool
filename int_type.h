@@ -3,6 +3,7 @@
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
